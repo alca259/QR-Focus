@@ -1,0 +1,122 @@
+2022/08/22 13:35:22 ----
+2022/08/22 13:35:22 QRCodeDecoder
+2022/08/22 13:35:46 ----
+2022/08/22 13:35:46 QRCodeDecoder
+2022/08/22 13:36:00 Convert image to black and white
+2022/08/22 13:36:00 Time: 63
+2022/08/22 13:36:00 Finders search
+2022/08/22 13:36:00 Horizontal Finders count: 147
+2022/08/22 13:36:00 Matched Finders count: 12
+2022/08/22 13:36:00 Remove all unused finders
+2022/08/22 13:36:00 Time: 94
+2022/08/22 13:36:00 Finder: Row: 329, Col: 1006, Module: 6,86, Distance: 0,50
+2022/08/22 13:36:00 Finder: Row: 673, Col: 664, Module: 6,79, Distance: 1,12
+2022/08/22 13:36:00 Finder: Row: 719, Col: 330, Module: 7,00, Distance: 0,71
+2022/08/22 13:36:00 Finder: Row: 1005, Col: 1395, Module: 6,93, Distance: 0,71
+2022/08/22 13:36:00 Search for QR corners
+2022/08/22 13:36:00 Decode Corner: Top Left:    Finder: Row: 329, Col: 1006, Module: 6,86, Distance: 0,50
+2022/08/22 13:36:00 Decode Corner: Top Right:   Finder: Row: 1005, Col: 1395, Module: 6,93, Distance: 0,71
+2022/08/22 13:36:00 Decode Corner: Bottom Left: Finder: Row: 719, Col: 330, Module: 7,00, Distance: 0,71
+2022/08/22 13:36:00 Initial version number: 30, dimension: 137
+2022/08/22 13:36:00 Version code exact match: 1ED75, Version: 30
+2022/08/22 13:36:00 Format info exact match: 1CE7, EC: H, mask: 2
+2022/08/22 13:36:00 Decode QR code using three finders
+2022/08/22 13:36:00 Fixed modules no error
+2022/08/22 13:36:00 No data errors
+2022/08/22 13:36:00 Version: 30, Dim: 137, ErrCorr: H, Generator: 30, Mask: 2, Group1: 23:15, Group2: 25:16
+2022/08/22 13:36:00 Data: Rotation 0, Error correction H
+The PDF File Writer C# class library PdfFileWriter allows you to create PDF files directly from your .net application. The library shields you from the details of the PDF file structure. To use the library, you need to add a reference to the attached PdfFileWriter.dll class library file, add a using PdfFileWriter statement in every source file that uses the library and include the PdfFileWriter.dll with your distribution. For more details go to 2.23 Installation. Alternatively, you can include the source code of the library with your application and avoid the need to distribute a separate data link library file. The minimum development requirement is .NET Framework 4.0 (Visual Studio 2013).
+2022/08/22 13:36:00 Time: 110
+2022/08/22 13:36:00 ****
+2022/08/22 13:36:00 Decode image: F:\Dev\Propio\QRCodeLibrary_src\QRCodeDecoder\QRCodeDecoderDemo\Work\QRCode30LRotation60.png 
+2022/08/22 13:36:00 Image width: 1724, Height: 1724
+2022/08/22 13:36:15 Convert image to black and white
+2022/08/22 13:36:15 Time: 0
+2022/08/22 13:36:15 Finders search
+2022/08/22 13:36:15 Horizontal Finders count: 44
+2022/08/22 13:36:15 Matched Finders count: 10
+2022/08/22 13:36:15 Remove all unused finders
+2022/08/22 13:36:15 Time: 15
+2022/08/22 13:36:15 Finder: Row: 59, Col: 484, Module: 8,21, Distance: 0,50
+2022/08/22 13:36:15 Finder: Row: 160, Col: 286, Module: 6,93, Distance: 0,50
+2022/08/22 13:36:15 Finder: Row: 265, Col: 584, Module: 9,71, Distance: 0,50
+2022/08/22 13:36:15 Search for QR corners
+2022/08/22 13:36:15 Decode Corner: Top Left:    Finder: Row: 59, Col: 484, Module: 8,21, Distance: 0,50
+2022/08/22 13:36:15 Decode Corner: Top Right:   Finder: Row: 265, Col: 584, Module: 9,71, Distance: 0,50
+2022/08/22 13:36:15 Decode Corner: Bottom Left: Finder: Row: 160, Col: 286, Module: 6,93, Distance: 0,50
+2022/08/22 13:36:15 Initial version number: 5, dimension: 37
+2022/08/22 13:36:15 Format info match with errors: 4FF5, EC: M, mask: 6, errors: 3
+2022/08/22 13:36:15 Decode QR code using three finders
+2022/08/22 13:36:15 Fixed modules too many errors: 109 / 260
+2022/08/22 13:36:15 Decode QR code exception.
+Fixed modules error
+2022/08/22 13:36:15 Estimated alignment mark: Row 335, Col 396
+2022/08/22 13:36:15 Calculated alignment mark: Row 330, Col 366
+2022/08/22 13:36:15 Fixed modules no error
+2022/08/22 13:36:15 No data errors
+2022/08/22 13:36:15 Version: 5, Dim: 37, ErrCorr: M, Generator: 24, Mask: 6, Group1: 2:43, Group2: 0:0
+2022/08/22 13:36:15 Data: QR Code video decode example
+QRCodeDecoder - Ver 3.0.0 - 2022-03-01
+2022/08/22 13:36:15 Time: 62
+2022/08/22 13:36:15 ****
+2022/08/22 13:36:15 Decode image: F:\Dev\Propio\QRCodeLibrary_src\QRCodeDecoder\QRCodeDecoderDemo\Work\VideoCaptureImage.png 
+2022/08/22 13:36:15 Image width: 640, Height: 480
+2022/08/22 13:36:26 Convert image to black and white
+2022/08/22 13:36:26 Time: 0
+2022/08/22 13:36:26 Finders search
+2022/08/22 13:36:26 Horizontal Finders count: 196
+2022/08/22 13:36:26 Matched Finders count: 25
+2022/08/22 13:36:26 Remove all unused finders
+2022/08/22 13:36:26 Time: 16
+2022/08/22 13:36:26 Finder: Row: 72, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Finder: Row: 72, Col: 360, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Finder: Row: 206, Col: 254, Module: 4,64, Distance: 1,00
+2022/08/22 13:36:26 Finder: Row: 227, Col: 178, Module: 4,57, Distance: 0,00
+2022/08/22 13:36:26 Finder: Row: 255, Col: 226, Module: 4,64, Distance: 0,00
+2022/08/22 13:36:26 Finder: Row: 360, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Search for QR corners
+2022/08/22 13:36:26 Decode Corner: Top Left:    Finder: Row: 255, Col: 226, Module: 4,64, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Top Right:   Finder: Row: 72, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Bottom Left: Finder: Row: 72, Col: 360, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Initial version number: 5, dimension: 37
+2022/08/22 13:36:26 Format info match with errors: 4BEC, EC: M, mask: 7, errors: 3
+2022/08/22 13:36:26 Decode QR code using three finders
+2022/08/22 13:36:26 Decode QR code exception.
+Index was outside the bounds of the array.
+2022/08/22 13:36:26 Estimated alignment mark: Row -74, Col 208
+2022/08/22 13:36:26 Decode corner failed. Index was outside the bounds of the array.
+2022/08/22 13:36:26 Decode Corner: Top Left:    Finder: Row: 72, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Top Right:   Finder: Row: 72, Col: 360, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Bottom Left: Finder: Row: 360, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Initial version number: 2, dimension: 25
+2022/08/22 13:36:26 Format info exact match: 1689, EC: H, mask: 0
+2022/08/22 13:36:26 Decode QR code using three finders
+2022/08/22 13:36:26 Fixed modules no error
+2022/08/22 13:36:26 Error correction applied to data. Total errors: 10
+2022/08/22 13:36:26 Version: 2, Dim: 25, ErrCorr: H, Generator: 28, Mask: 0, Group1: 1:16, Group2: 0:0
+2022/08/22 13:36:26 Data: Big QR Code
+2022/08/22 13:36:26 Decode Corner: Top Left:    Finder: Row: 206, Col: 254, Module: 4,64, Distance: 1,00
+2022/08/22 13:36:26 Decode Corner: Top Right:   Finder: Row: 360, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Bottom Left: Finder: Row: 72, Col: 72, Module: 16,00, Distance: 0,00
+2022/08/22 13:36:26 Initial version number: 5, dimension: 37
+2022/08/22 13:36:26 Format info no match: 4B78
+2022/08/22 13:36:26 Format info match with errors: 6083, EC: L, mask: 5, errors: 2
+2022/08/22 13:36:26 Decode QR code using three finders
+2022/08/22 13:36:26 Decode QR code exception.
+Index was outside the bounds of the array.
+2022/08/22 13:36:26 Estimated alignment mark: Row 224, Col -74
+2022/08/22 13:36:26 Decode corner failed. Index was outside the bounds of the array.
+2022/08/22 13:36:26 Decode Corner: Top Left:    Finder: Row: 255, Col: 226, Module: 4,64, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Top Right:   Finder: Row: 227, Col: 178, Module: 4,57, Distance: 0,00
+2022/08/22 13:36:26 Decode Corner: Bottom Left: Finder: Row: 206, Col: 254, Module: 4,64, Distance: 1,00
+2022/08/22 13:36:26 Initial version number: 1, dimension: 21
+2022/08/22 13:36:26 Format info exact match: 77C4, EC: L, mask: 0
+2022/08/22 13:36:26 Decode QR code using three finders
+2022/08/22 13:36:26 Fixed modules no error
+2022/08/22 13:36:26 No data errors
+2022/08/22 13:36:26 Version: 1, Dim: 21, ErrCorr: L, Generator: 7, Mask: 0, Group1: 1:19, Group2: 0:0
+2022/08/22 13:36:26 Data: Small QR Code
+2022/08/22 13:36:26 Time: 78
+2022/08/22 13:36:26 ****
+2022/08/22 13:36:26 Decode image: F:\Dev\Propio\QRCodeLibrary_src\QRCodeDecoder\QRCodeDecoderDemo\Work\DoubleQRCode.png 
+2022/08/22 13:36:26 Image width: 432, Height: 432

@@ -1,5 +1,4 @@
-﻿using Docnet;
-using Docnet.Core;
+﻿using Docnet.Core;
 using Docnet.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -73,7 +72,7 @@ namespace QRFocus.Library
         /// <param name="viewportHeight">DPI</param>
         /// <returns></returns>
         /// <exception cref="ApplicationException"></exception>
-        public QRCodeResult[] PDFDecoder(string fileName, int pageIndex = 1, string password = null, int viewportWidth = 1080, int viewportHeight = 1920)
+        public QRCodeResult[] PDFDecoder(string fileName, int pageIndex = 0, string password = null, int viewportWidth = 1080, int viewportHeight = 1920)
         {
             // test argument
             if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
@@ -96,11 +95,41 @@ namespace QRFocus.Library
                 // load file image to bitmap
                 using (var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb))
                 {
+                    AddBytes(bmp, rawBytes);
+                    //DrawRectangles(bmp, characters);
+
                     // decode bitmap
                     return ImageDecoder(bmp);
                 }
             }
         }
+
+        #region Pdf aux methods
+        private static void AddBytes(Bitmap bmp, byte[] rawBytes)
+        {
+            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
+
+            var bmpData = bmp.LockBits(rect, ImageLockMode.WriteOnly, bmp.PixelFormat);
+            var pNative = bmpData.Scan0;
+
+            Marshal.Copy(rawBytes, 0, pNative, rawBytes.Length);
+            bmp.UnlockBits(bmpData);
+        }
+
+        private static void DrawRectangles(Bitmap bmp, IEnumerable<Character> characters)
+        {
+            var pen = new Pen(Color.Red);
+
+            using (var graphics = Graphics.FromImage(bmp))
+            {
+                foreach (var c in characters)
+                {
+                    var rect = new Rectangle(c.Box.Left, c.Box.Top, c.Box.Right - c.Box.Left, c.Box.Bottom - c.Box.Top);
+                    graphics.DrawRectangle(pen, rect);
+                }
+            }
+        }
+        #endregion
 
         /// <summary>
         /// QR Code decode image file
