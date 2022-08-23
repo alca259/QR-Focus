@@ -16,5 +16,6 @@ namespace QRFocus.Library
         public double ALIGNMENT_SEARCH_AREA { get; set; } = QRConstants.ALIGNMENT_SEARCH_AREA;
 
         public Dictionary<ErrorTolerance, int> ErrorTolerancePercent { get; set; } = QRConstants.ErrorTolerancePercent;
+        public float BlackAndWhiteThreshold { get; set; } = 0.8f;
     }
 }

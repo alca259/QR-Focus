@@ -44,10 +44,21 @@ namespace QRFocus.Demo
 
             if (".pdf".Equals(ext, StringComparison.InvariantCultureIgnoreCase))
             {
-                var decoderResult = decoder.PDFDecoder(
+                var pages = decoder.PDFPageCount(
                     fileName: openFileDialog1.FileName,
-                    pageIndex: 0,
-                    ppi: 1);
+                    ppi: 1.0);
+
+                List<QRCodeResult> decoderResult = new List<QRCodeResult>();
+
+                for (int i = 0; i < pages; i++)
+                {
+                    var forResult = decoder.PDFDecoder(
+                        fileName: openFileDialog1.FileName,
+                        pageIndex: i,
+                        ppi: 5.0);
+
+                    decoderResult.AddRange(forResult);
+                }
 
                 text = string.Join(Environment.NewLine, decoderResult.Select(s => s.Value));
             }
