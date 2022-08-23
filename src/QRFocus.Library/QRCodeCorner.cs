@@ -85,7 +85,7 @@ namespace QRFocus.Library
                 double leftLineLength = Math.Sqrt(leftLineDeltaX * leftLineDeltaX + leftLineDeltaY * leftLineDeltaY);
 
                 // the short side must be at least 80% of the long side
-                if (Math.Min(topLineLength, leftLineLength) < QRConstants.CORNER_SIDE_LENGTH_DEV * Math.Max(topLineLength, leftLineLength))
+                if (Math.Min(topLineLength, leftLineLength) < QRFocusSettings.Instance.CORNER_SIDE_LENGTH_DEV * Math.Max(topLineLength, leftLineLength))
                     continue;
 
                 // top line vector
@@ -98,7 +98,7 @@ namespace QRFocus.Library
                 double newLeftY = -topLineSin * leftLineDeltaX + topLineCos * leftLineDeltaY;
 
                 // new left line X should be zero (or between +/- 4 deg)
-                if (Math.Abs(newLeftX / leftLineLength) > QRConstants.CORNER_RIGHT_ANGLE_DEV)
+                if (Math.Abs(newLeftX / leftLineLength) > QRFocusSettings.Instance.CORNER_RIGHT_ANGLE_DEV)
                     continue;
 
                 // swap top line with left line

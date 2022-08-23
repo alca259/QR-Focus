@@ -1,21 +1,32 @@
-﻿namespace QRFocus.Library
+﻿using System.Collections.Generic;
+
+namespace QRFocus.Library
 {
     public static class QRConstants
     {
         /// <summary>
-        /// 0.25
+        /// 0.35
         /// </summary>
         internal const double SIGNATURE_MAX_DEVIATION = 0.35;
+        /// <summary>
+        /// 2.0
+        /// </summary>
         internal const double HOR_VERT_SCAN_MAX_DISTANCE = 2.0;
         /// <summary>
-        /// 0.75;
+        /// 0.5
         /// </summary>
         internal const double MODULE_SIZE_DEVIATION = 0.5;
+        /// <summary>
+        /// 0.8
+        /// </summary>
         internal const double CORNER_SIDE_LENGTH_DEV = 0.8;
         /// <summary>
-        /// about Sin(4 deg)
+        /// about Sin(4 deg) 0.25
         /// </summary>
         internal const double CORNER_RIGHT_ANGLE_DEV = 0.25;
+        /// <summary>
+        /// 0.3
+        /// </summary>
         internal const double ALIGNMENT_SEARCH_AREA = 0.3;
 
         /// <summary>
@@ -44,7 +55,13 @@
         /// <summary>
 		/// Error correction percent (L, M, Q, H)
 		/// </summary>
-		internal static int[] ErrorTolerancePercent = new int[] { 7, 15, 25, 30 };
+		internal static Dictionary<ErrorTolerance, int> ErrorTolerancePercent = new Dictionary<ErrorTolerance, int>()
+        {
+            { ErrorTolerance.L, 7 },
+            { ErrorTolerance.M, 15 },
+            { ErrorTolerance.Q, 25 },
+            { ErrorTolerance.H, 30 }
+        };
 
         /// <summary>
         /// Codificación de los distintos QRs

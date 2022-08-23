@@ -54,7 +54,7 @@ namespace QRFocus.Library
             if (col < HCol1 || col >= HCol2 || HRow < row1 || HRow >= row2) return;
 
             // Module sizes must be about the same
-            if (Math.Min(HModule, vModule) < Math.Max(HModule, vModule) * QRConstants.MODULE_SIZE_DEVIATION) return;
+            if (Math.Min(HModule, vModule) < Math.Max(HModule, vModule) * QRFocusSettings.Instance.MODULE_SIZE_DEVIATION) return;
 
             // calculate distance
             double DeltaX = col - 0.5 * (HCol1 + HCol2);
@@ -62,7 +62,7 @@ namespace QRFocus.Library
             double Delta = Math.Sqrt(DeltaX * DeltaX + DeltaY * DeltaY);
 
             // distance between two points must be less than 2 pixels
-            if (Delta > QRConstants.HOR_VERT_SCAN_MAX_DISTANCE) return;
+            if (Delta > QRFocusSettings.Instance.HOR_VERT_SCAN_MAX_DISTANCE) return;
 
             // new result is better than last result
             if (Delta < Distance)

@@ -61,6 +61,18 @@ namespace QRFocus.Library
         internal double Trans4h { get; private set; }
         #endregion
 
+        #region Constructors
+        public QRDecoder()
+        {
+
+        }
+
+        public QRDecoder(Action<QRFocusSettings> settings)
+        {
+            settings.Invoke(QRFocusSettings.Instance);
+        }
+        #endregion
+
         #region Public methods
         /// <summary>
         /// QR Code decode pdf file
@@ -68,11 +80,57 @@ namespace QRFocus.Library
         /// <param name="fileName"></param>
         /// <param name="pageIndex">0-Index</param>
         /// <param name="password"></param>
-        /// <param name="viewportWidth">DPI</param>
-        /// <param name="viewportHeight">DPI</param>
+        /// <param name="ppi">Page scaling PPI factor.</param>
         /// <returns></returns>
         /// <exception cref="ApplicationException"></exception>
-        public IEnumerable<QRCodeResult> PDFDecoder(string fileName, int pageIndex = 0, string password = null, int viewportWidth = 1080, int viewportHeight = 1920)
+        public IEnumerable<QRCodeResult> PDFDecoder(string fileName, int pageIndex = 0, double ppi = 1.0, string password = null)
+        {
+            // test argument
+            if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
+
+            var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(ppi));
+
+            var pageCount = docReader.GetPageCount();
+            pageIndex = Math.Abs(pageIndex);
+            if (pageIndex >= pageCount) throw new ApplicationException("Page index out of bounds.");
+
+            using (var pageReader = docReader.GetPageReader(pageIndex))
+            {
+                var rawBytes = pageReader.GetImage();
+
+                var width = pageReader.GetPageWidth();
+                var height = pageReader.GetPageHeight();
+
+                var characters = pageReader.GetCharacters();
+
+                // load file image to bitmap
+                using (var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb))
+                {
+                    AddBytes(bmp, rawBytes);
+                    //DrawRectangles(bmp, characters);
+
+                    // decode bitmap
+                    return ImageDecoder(bmp);
+                }
+            }
+        }
+
+        /// <summary>
+        /// QR Code decode pdf file.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="pageIndex">0-Index</param>
+        /// <param name="password"></param>
+        /// <param name="viewportWidth">Smaller dimension.</param>
+        /// <param name="viewportHeight">Larger dimension.</param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        /// <remarks>
+        /// Get page dimension options for this particular document. viewportWidth x viewportHeight represents
+        /// a viewport to which the document gets scaled to fit without modifying it's aspect
+        /// ratio.
+        /// </remarks>
+        public IEnumerable<QRCodeResult> PDFDecoderSized(string fileName, int pageIndex = 0, int viewportWidth = 1080, int viewportHeight = 1920, string password = null)
         {
             // test argument
             if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
@@ -143,7 +201,15 @@ namespace QRFocus.Library
             if (fileName == null) throw new ApplicationException("QRDecoder.ImageDecoder File name is null");
 
             // load file image to bitmap
-            Bitmap inputImageBitmap = new Bitmap(fileName);
+            Bitmap inputImageBitmap;
+            try
+            {
+                inputImageBitmap = new Bitmap(fileName);
+            }
+            catch
+            {
+                return new List<QRCodeResult>();
+            }
 
             // decode bitmap
             return ImageDecoder(inputImageBitmap);
@@ -714,7 +780,7 @@ namespace QRFocus.Library
             out double Module)
         {
             Module = (Pos[Index + 5] - Pos[Index]) / 7.0;
-            double MaxDev = QRConstants.SIGNATURE_MAX_DEVIATION * Module;
+            double MaxDev = QRFocusSettings.Instance.SIGNATURE_MAX_DEVIATION * Module;
             if (Math.Abs(Len[Index] - Module) > MaxDev) return false;
             if (Math.Abs(Len[Index + 1] - Module) > MaxDev) return false;
             if (Math.Abs(Len[Index + 2] - 3 * Module) > MaxDev) return false;
@@ -738,7 +804,7 @@ namespace QRFocus.Library
             out double Module)
         {
             Module = (Pos[Index + 4] - Pos[Index + 1]) / 3.0;
-            double MaxDev = QRConstants.SIGNATURE_MAX_DEVIATION * Module;
+            double MaxDev = QRFocusSettings.Instance.SIGNATURE_MAX_DEVIATION * Module;
             if (Len[Index] < Module - MaxDev) return false;
             if (Math.Abs(Len[Index + 1] - Module) > MaxDev) return false;
             if (Math.Abs(Len[Index + 2] - Module) > MaxDev) return false;
@@ -996,7 +1062,7 @@ namespace QRFocus.Library
 
 
             // search area
-            int Side = (int)Math.Round(QRConstants.ALIGNMENT_SEARCH_AREA * (Corner.TopLineLength + Corner.LeftLineLength), 0, MidpointRounding.AwayFromZero);
+            int Side = (int)Math.Round(QRFocusSettings.Instance.ALIGNMENT_SEARCH_AREA * (Corner.TopLineLength + Corner.LeftLineLength), 0, MidpointRounding.AwayFromZero);
 
             int AreaLeft = ImageCol - Side / 2;
             int AreaTop = ImageRow - Side / 2;
@@ -1298,7 +1364,7 @@ namespace QRFocus.Library
                     }
                 }
 
-            if (ErrorCount > FixedCount * QRConstants.ErrorTolerancePercent[(int)ErrorCorrection] / 100)
+            if (ErrorCount > FixedCount * QRFocusSettings.Instance.ErrorTolerancePercent[ErrorCorrection] / 100)
                 throw new ApplicationException("Fixed modules error");
             return;
         }
