@@ -72,7 +72,7 @@ namespace QRFocus.Library
         /// <param name="viewportHeight">DPI</param>
         /// <returns></returns>
         /// <exception cref="ApplicationException"></exception>
-        public QRCodeResult[] PDFDecoder(string fileName, int pageIndex = 0, string password = null, int viewportWidth = 1080, int viewportHeight = 1920)
+        public IEnumerable<QRCodeResult> PDFDecoder(string fileName, int pageIndex = 0, string password = null, int viewportWidth = 1080, int viewportHeight = 1920)
         {
             // test argument
             if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
@@ -137,7 +137,7 @@ namespace QRFocus.Library
         /// <param name="fileName"></param>
         /// <returns>Array of QRCodeResult</returns>
         /// <exception cref="ApplicationException"></exception>
-        public QRCodeResult[] ImageDecoder(string fileName)
+        public IEnumerable<QRCodeResult> ImageDecoder(string fileName)
         {
             // test argument
             if (fileName == null) throw new ApplicationException("QRDecoder.ImageDecoder File name is null");
@@ -154,7 +154,7 @@ namespace QRFocus.Library
         /// </summary>
         /// <param name="inputImageBitmap">Input image</param>
         /// <returns>Output byte arrays</returns>
-        public QRCodeResult[] ImageDecoder(Bitmap inputImageBitmap)
+        public IEnumerable<QRCodeResult> ImageDecoder(Bitmap inputImageBitmap)
         {
             try
             {
@@ -166,20 +166,20 @@ namespace QRFocus.Library
                 ImageHeight = inputImageBitmap.Height;
 
                 // convert input image to black and white boolean image
-                if (!ConvertImageToBlackAndWhite(inputImageBitmap)) return null;
+                if (!ConvertImageToBlackAndWhite(inputImageBitmap)) return DataArrayList;
 
                 // horizontal search for finders
-                if (!HorizontalFindersSearch()) return null;
+                if (!HorizontalFindersSearch()) return DataArrayList;
 
                 // vertical search for finders
                 VerticalFindersSearch();
 
                 // remove unused finders
-                if (!RemoveUnusedFinders()) return null;
+                if (!RemoveUnusedFinders()) return DataArrayList;
             }
             catch
             {
-                return null;
+                return DataArrayList;
             }
 
             // look for all possible 3 finder patterns
@@ -207,7 +207,7 @@ namespace QRFocus.Library
 
                             // decode corner using three finders
                             // continue if successful
-                            if (DecodeQRCodeCorner(corner)) continue;
+                            if (DecodeQRCodeCorner()) continue;
 
                             // qr code version 1 has no alignment mark
                             // in other words decode failed 
@@ -224,7 +224,7 @@ namespace QRFocus.Library
                                 SetTransMatrix(corner, align.HRow, align.VCol);
 
                                 // decode corner using three finders and one alignment mark
-                                if (DecodeQRCodeCorner(corner)) break;
+                                if (DecodeQRCodeCorner()) break;
                             }
                         }
                         catch
@@ -238,7 +238,7 @@ namespace QRFocus.Library
             // not found exit
             if (DataArrayList.Count == 0)
             {
-                return null;
+                return DataArrayList;
             }
 
             // successful exit
@@ -815,9 +815,8 @@ namespace QRFocus.Library
         /// <summary>
         /// Search for QR Code version
         /// </summary>
-        /// <param name="Corner"></param>
         /// <returns></returns>
-        internal bool DecodeQRCodeCorner(QRCodeCorner Corner)
+        internal bool DecodeQRCodeCorner()
         {
             try
             {
@@ -1155,10 +1154,11 @@ namespace QRFocus.Library
             return TestVersionCode(VersionCode);
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Test version code bits
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Test version code bits
+        /// </summary>
+        /// <param name="VersionCode"></param>
+        /// <returns></returns>
         internal static int TestVersionCode(int VersionCode)
         {
             // format info
@@ -1257,24 +1257,22 @@ namespace QRFocus.Library
             return Error <= 3 ? BestInfo : -1;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Count Bits
-        ////////////////////////////////////////////////////////////////////
-
-        internal static int CountBits
-                (
-                int Value
-                )
+        /// <summary>
+        /// Count Bits
+        /// </summary>
+        /// <param name="Value"></param>
+        /// <returns></returns>
+        internal static int CountBits(int Value)
         {
             int Count = 0;
             for (int Mask = 0x4000; Mask != 0; Mask >>= 1) if ((Value & Mask) != 0) Count++;
             return Count;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Convert image to qr code matrix and test fixed modules
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Convert image to qr code matrix and test fixed modules
+        /// </summary>
+        /// <exception cref="ApplicationException"></exception>
         internal void ConvertImageToMatrix()
         {
             // loop for all modules
@@ -1305,10 +1303,9 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Unload matrix data from base matrix
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Unload matrix data from base matrix
+        /// </summary>
         internal void UnloadDataFromMatrix()
         {
             // input array pointer initialization
@@ -1386,10 +1383,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Restore interleave data and error correction blocks
-        ////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Restore interleave data and error correction blocks
+        /// </summary>
         internal void RestoreBlocks()
         {
             // allocate temp codewords array
@@ -1454,10 +1451,11 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Calculate Error Correction
-        ////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Calculate Error Correction
+        /// </summary>
+        /// <exception cref="ApplicationException"></exception>
         protected void CalculateErrorCorrection()
         {
             // total error count
@@ -1530,10 +1528,12 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Convert bit array to byte array
-        ////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Convert bit array to byte array
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
         internal byte[] DecodeData()
         {
             // bit buffer initial condition
@@ -1670,13 +1670,13 @@ namespace QRFocus.Library
             return DataSeg.ToArray();
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Read data from codeword array
-        ////////////////////////////////////////////////////////////////////
-        internal int ReadBitsFromCodewordsArray
-                (
-                int Bits
-                )
+
+        /// <summary>
+        /// Read data from codeword array
+        /// </summary>
+        /// <param name="Bits"></param>
+        /// <returns></returns>
+        internal int ReadBitsFromCodewordsArray(int Bits)
         {
             if (Bits > BitBufferLen) return -1;
             int Data = (int)(BitBuffer >> (32 - Bits));
@@ -1689,14 +1689,14 @@ namespace QRFocus.Library
             }
             return Data;
         }
-        ////////////////////////////////////////////////////////////////////
-        // Set encoded data bits length
-        ////////////////////////////////////////////////////////////////////
 
-        internal int DataLengthBits
-                (
-                QRConstants.Encoding EncodingMode
-                )
+        /// <summary>
+        /// Set encoded data bits length
+        /// </summary>
+        /// <param name="EncodingMode"></param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        internal int DataLengthBits(QRConstants.Encoding EncodingMode)
         {
             // Data length bits
 
@@ -1718,10 +1718,9 @@ namespace QRFocus.Library
             throw new ApplicationException("Unsupported encoding mode " + EncodingMode.ToString());
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Set data and error correction codewords length
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Set data and error correction codewords length
+        /// </summary>
         internal void SetDataCodewordsLength()
         {
             // index shortcut
@@ -1753,20 +1752,19 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Format info to error correction code
-        ////////////////////////////////////////////////////////////////////
-        internal static QRConstants.ErrorTolerance FormatInfoToErrCode
-                (
-                int Info
-                )
+        /// <summary>
+        /// Format info to error correction code
+        /// </summary>
+        /// <param name="Info"></param>
+        /// <returns></returns>
+        internal static QRConstants.ErrorTolerance FormatInfoToErrCode(int Info)
         {
             return (QRConstants.ErrorTolerance)(Info ^ 1);
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Build Base Matrix
-        ////////////////////////////////////////////////////////////////////
+        /// <summary>
+        /// Build Base Matrix
+        /// </summary>
         internal void BuildBaseMatrix()
         {
             // allocate base matrix
@@ -1833,14 +1831,11 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask
-        ////////////////////////////////////////////////////////////////////
-
-        internal void ApplyMask
-                (
-                int Mask
-                )
+        /// <summary>
+        /// Apply Mask
+        /// </summary>
+        /// <param name="Mask"></param>
+        internal void ApplyMask(int Mask)
         {
             MaskMatrix = (byte[,])BaseMatrix.Clone();
             switch (Mask)
@@ -1880,11 +1875,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 0
-        // (row + column) % 2 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary> 
+        /// Apply Mask 0
+        /// (row + column) % 2 == 0
+        /// </summary>
         internal void ApplyMask0()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 2)
@@ -1898,11 +1892,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 1
-        // row % 2 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 1
+        /// row % 2 == 0
+        /// </summary>
         internal void ApplyMask1()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 2)
@@ -1912,11 +1905,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 2
-        // column % 3 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 2
+        /// column % 3 == 0
+        /// </summary>
         internal void ApplyMask2()
         {
             for (int Row = 0; Row < QRCodeDimension; Row++)
@@ -1926,11 +1918,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 3
-        // (row + column) % 3 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 3
+        /// (row + column) % 3 == 0
+        /// </summary>
         internal void ApplyMask3()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 3)
@@ -1946,11 +1937,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 4
-        // ((row / 2) + (column / 3)) % 2 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 4
+        /// ((row / 2) + (column / 3)) % 2 == 0
+        /// </summary>
         internal void ApplyMask4()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 4)
@@ -1987,11 +1977,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 5
-        // ((row * column) % 2) + ((row * column) % 3) == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 5
+        /// ((row * column) % 2) + ((row * column) % 3) == 0
+        /// </summary>
         internal void ApplyMask5()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 6)
@@ -2015,11 +2004,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 6
-        // (((row * column) % 2) + ((row * column) mod 3)) mod 2 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 6
+        /// (((row * column) % 2) + ((row * column) mod 3)) mod 2 == 0
+        /// </summary>
         internal void ApplyMask6()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 6)
@@ -2059,11 +2047,10 @@ namespace QRFocus.Library
             return;
         }
 
-        ////////////////////////////////////////////////////////////////////
-        // Apply Mask 7
-        // (((row + column) % 2) + ((row * column) mod 3)) mod 2 == 0
-        ////////////////////////////////////////////////////////////////////
-
+        /// <summary>
+        /// Apply Mask 7
+        /// (((row + column) % 2) + ((row * column) mod 3)) mod 2 == 0
+        /// </summary>
         internal void ApplyMask7()
         {
             for (int Row = 0; Row < QRCodeDimension; Row += 6)
@@ -2116,12 +2103,17 @@ namespace QRFocus.Library
 
         internal static int INCORRECTABLE_ERROR = -1;
 
-        internal static int CorrectData
-                (
-                byte[] ReceivedData,        // recived data buffer with data and error correction code
-                int DataLength,         // length of data in the buffer (note sometimes the array is longer than data) 
-                int ErrCorrCodewords    // numer of error correction codewords
-                )
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ReceivedData">recived data buffer with data and error correction code</param>
+        /// <param name="DataLength">length of data in the buffer (note sometimes the array is longer than data)</param>
+        /// <param name="ErrCorrCodewords">numer of error correction codewords</param>
+        /// <returns></returns>
+        internal static int CorrectData(
+            byte[] ReceivedData,
+            int DataLength,
+            int ErrCorrCodewords)
         {
             // calculate syndrome vector
             int[] Syndrome = CalculateSyndrome(ReceivedData, DataLength, ErrCorrCodewords);
@@ -2150,19 +2142,21 @@ namespace QRFocus.Library
             return ErrorCount;
         }
 
-        // Syndrome vector calculation
-        // S0 = R0 + R1 +        R2 + ....        + Rn
-        // S1 = R0 + R1 * A**1 + R2 * A**2 + .... + Rn * A**n
-        // S2 = R0 + R1 * A**2 + R2 * A**4 + .... + Rn * A**2n
-        // ....
-        // Sm = R0 + R1 * A**m + R2 * A**2m + .... + Rn * A**mn
-
-        internal static int[] CalculateSyndrome
-                (
-                byte[] ReceivedData,        // recived data buffer with data and error correction code
-                int DataLength,         // length of data in the buffer (note sometimes the array is longer than data) 
-                int ErrCorrCodewords    // numer of error correction codewords
-                )
+        /// <summary>
+        /// Syndrome vector calculation
+        /// S0 = R0 + R1 +        R2 + ....        + Rn
+        /// S1 = R0 + R1 * A**1 + R2 * A**2 + .... + Rn * A**n
+        /// S2 = R0 + R1 * A**2 + R2 * A**4 + .... + Rn * A**2n
+        /// ....
+        /// Sm = R0 + R1 * A**m + R2 * A**2m + .... + Rn * A**mn
+        /// </summary>
+        /// <param name="ReceivedData">recived data buffer with data and error correction code</param>
+        /// <param name="DataLength">length of data in the buffer (note sometimes the array is longer than data) </param>
+        /// <param name="ErrCorrCodewords">numer of error correction codewords</param>
+        internal static int[] CalculateSyndrome(
+            byte[] ReceivedData,
+            int DataLength,
+            int ErrCorrCodewords)
         {
             // allocate syndrome vector
             int[] Syndrome = new int[ErrCorrCodewords];
@@ -2192,14 +2186,19 @@ namespace QRFocus.Library
             return Error ? Syndrome : null;
         }
 
-        // Modified Berlekamp-Massey
-        internal static int CalculateSigmaMBM
-                (
-                int[] Sigma,
-                int[] Omega,
-                int[] Syndrome,
-                int ErrCorrCodewords
-                )
+        /// <summary>
+        /// Modified Berlekamp-Massey
+        /// </summary>
+        /// <param name="Sigma"></param>
+        /// <param name="Omega"></param>
+        /// <param name="Syndrome"></param>
+        /// <param name="ErrCorrCodewords"></param>
+        /// <returns></returns>
+        internal static int CalculateSigmaMBM(
+            int[] Sigma,
+            int[] Omega,
+            int[] Syndrome,
+            int ErrCorrCodewords)
         {
             int[] PolyC = new int[ErrCorrCodewords];
             int[] PolyB = new int[ErrCorrCodewords];
@@ -2246,16 +2245,21 @@ namespace QRFocus.Library
             return ErrorCount;
         }
 
-        // Chien search is a fast algorithm for determining roots of polynomials defined over a finite field.
-        // The most typical use of the Chien search is in finding the roots of error-locator polynomials
-        // encountered in decoding Reed-Solomon codes and BCH codes.
-        private static bool ChienSearch
-                (
-                int[] ErrorPosition,
-                int DataLength,
-                int ErrorCount,
-                int[] Sigma
-                )
+        /// <summary>
+        /// Chien search is a fast algorithm for determining roots of polynomials defined over a finite field.
+        /// The most typical use of the Chien search is in finding the roots of error-locator polynomials
+        /// encountered in decoding Reed-Solomon codes and BCH codes.
+        /// </summary>
+        /// <param name="ErrorPosition"></param>
+        /// <param name="DataLength"></param>
+        /// <param name="ErrorCount"></param>
+        /// <param name="Sigma"></param>
+        /// <returns></returns>
+        private static bool ChienSearch(
+            int[] ErrorPosition,
+            int DataLength,
+            int ErrorCount,
+            int[] Sigma)
         {
             // last error
             int LastPosition = Sigma[1];
@@ -2297,15 +2301,13 @@ namespace QRFocus.Library
             return false;
         }
 
-        private static void ApplyCorrection
-                (
-                byte[] ReceivedData,
-                int DataLength,
-                int ErrorCount,
-                int[] ErrorPosition,
-                int[] Sigma,
-                int[] Omega
-                )
+        private static void ApplyCorrection(
+            byte[] ReceivedData,
+            int DataLength,
+            int ErrorCount,
+            int[] ErrorPosition,
+            int[] Sigma,
+            int[] Omega)
         {
             for (int ErrIndex = 0; ErrIndex < ErrorCount; ErrIndex++)
             {
@@ -2345,39 +2347,32 @@ namespace QRFocus.Library
             return;
         }
 
-        internal static int Multiply
-                (
-                int Int1,
-                int Int2
-                )
+        internal static int Multiply(
+            int Int1,
+            int Int2)
         {
             return (Int1 == 0 || Int2 == 0) ? 0 : ExpToInt[IntToExp[Int1] + IntToExp[Int2]];
         }
 
-        internal static int MultiplyIntByExp
-                (
-                int Int,
-                int Exp
-                )
+        internal static int MultiplyIntByExp(
+            int Int,
+            int Exp)
         {
             return Int == 0 ? 0 : ExpToInt[IntToExp[Int] + Exp];
         }
 
-        internal static int MultiplyDivide
-                (
-                int Int1,
-                int Int2,
-                int Int3
-                )
+        internal static int MultiplyDivide(
+            int Int1,
+            int Int2,
+            int Int3)
         {
             return (Int1 == 0 || Int2 == 0) ? 0 : ExpToInt[(IntToExp[Int1] + IntToExp[Int2] - IntToExp[Int3] + 255) % 255];
         }
 
-        internal static int DivideIntByExp
-                (
-                int Int,
-                int Exp
-                )
+        internal static int DivideIntByExp(
+            int Int,
+            int Exp
+        )
         {
             return Int == 0 ? 0 : ExpToInt[IntToExp[Int] - Exp + 255];
         }
@@ -2399,59 +2394,60 @@ namespace QRFocus.Library
             return;
         }
 
+        #region Internal constants
         // alignment symbols position as function of dimension
         internal static readonly byte[][] AlignmentPositionArray =
-            {
-        null,
-        null,
-        new byte[] {  6,  18},
-        new byte[] {  6,  22},
-        new byte[] {  6,  26},
-        new byte[] {  6,  30},
-        new byte[] {  6,  34},
-        new byte[] {  6,  22,  38},
-        new byte[] {  6,  24,  42},
-        new byte[] {  6,  26,  46},
-        new byte[] {  6,  28,  50},
-        new byte[] {  6,  30,  54},
-        new byte[] {  6,  32,  58},
-        new byte[] {  6,  34,  62},
-        new byte[] {  6,  26,  46,  66},
-        new byte[] {  6,  26,  48,  70},
-        new byte[] {  6,  26,  50,  74},
-        new byte[] {  6,  30,  54,  78},
-        new byte[] {  6,  30,  56,  82},
-        new byte[] {  6,  30,  58,  86},
-        new byte[] {  6,  34,  62,  90},
-        new byte[] {  6,  28,  50,  72,  94},
-        new byte[] {  6,  26,  50,  74,  98},
-        new byte[] {  6,  30,  54,  78, 102},
-        new byte[] {  6,  28,  54,  80, 106},
-        new byte[] {  6,  32,  58,  84, 110},
-        new byte[] {  6,  30,  58,  86, 114},
-        new byte[] {  6,  34,  62,  90, 118},
-        new byte[] {  6,  26,  50,  74,  98, 122},
-        new byte[] {  6,  30,  54,  78, 102, 126},
-        new byte[] {  6,  26,  52,  78, 104, 130},
-        new byte[] {  6,  30,  56,  82, 108, 134},
-        new byte[] {  6,  34,  60,  86, 112, 138},
-        new byte[] {  6,  30,  58,  86, 114, 142},
-        new byte[] {  6,  34,  62,  90, 118, 146},
-        new byte[] {  6,  30,  54,  78, 102, 126, 150},
-        new byte[] {  6,  24,  50,  76, 102, 128, 154},
-        new byte[] {  6,  28,  54,  80, 106, 132, 158},
-        new byte[] {  6,  32,  58,  84, 110, 136, 162},
-        new byte[] {  6,  26,  54,  82, 110, 138, 166},
-        new byte[] {  6,  30,  58,  86, 114, 142, 170},
+        {
+            null,
+            null,
+            new byte[] { 6,  18 },
+            new byte[] { 6,  22 },
+            new byte[] { 6,  26 },
+            new byte[] { 6,  30 },
+            new byte[] { 6,  34 },
+            new byte[] { 6,  22,  38 },
+            new byte[] { 6,  24,  42 },
+            new byte[] { 6,  26,  46 },
+            new byte[] { 6,  28,  50 },
+            new byte[] { 6,  30,  54 },
+            new byte[] { 6,  32,  58 },
+            new byte[] { 6,  34,  62 },
+            new byte[] { 6,  26,  46,  66 },
+            new byte[] { 6,  26,  48,  70 },
+            new byte[] { 6,  26,  50,  74 },
+            new byte[] { 6,  30,  54,  78 },
+            new byte[] { 6,  30,  56,  82 },
+            new byte[] { 6,  30,  58,  86 },
+            new byte[] { 6,  34,  62,  90 },
+            new byte[] { 6,  28,  50,  72,  94 },
+            new byte[] { 6,  26,  50,  74,  98 },
+            new byte[] { 6,  30,  54,  78, 102 },
+            new byte[] { 6,  28,  54,  80, 106 },
+            new byte[] { 6,  32,  58,  84, 110 },
+            new byte[] { 6,  30,  58,  86, 114 },
+            new byte[] { 6,  34,  62,  90, 118 },
+            new byte[] { 6,  26,  50,  74,  98, 122 },
+            new byte[] { 6,  30,  54,  78, 102, 126 },
+            new byte[] { 6,  26,  52,  78, 104, 130 },
+            new byte[] { 6,  30,  56,  82, 108, 134 },
+            new byte[] { 6,  34,  60,  86, 112, 138 },
+            new byte[] { 6,  30,  58,  86, 114, 142 },
+            new byte[] { 6,  34,  62,  90, 118, 146 },
+            new byte[] { 6,  30,  54,  78, 102, 126, 150 },
+            new byte[] { 6,  24,  50,  76, 102, 128, 154 },
+            new byte[] { 6,  28,  54,  80, 106, 132, 158 },
+            new byte[] { 6,  32,  58,  84, 110, 136, 162 },
+            new byte[] { 6,  26,  54,  82, 110, 138, 166 },
+            new byte[] { 6,  30,  58,  86, 114, 142, 170 },
         };
 
         // maximum code words as function of dimension
         internal static readonly int[] MaxCodewordsArray =
-            {0,
-          26,   44,   70,  100,  134,  172,  196,  242,  292,  346,
-         404,  466,  532,  581,  655,  733,  815,  901,  991, 1085,
-        1156, 1258, 1364, 1474, 1588, 1706, 1828, 1921, 2051, 2185,
-        2323, 2465, 2611, 2761, 2876, 3034, 3196, 3362, 3532, 3706
+        {
+            0, 26,   44,   70,  100,  134,  172,  196,  242,  292,  346,
+            404,  466,  532,  581,  655,  733,  815,  901,  991, 1085,
+            1156, 1258, 1364, 1474, 1588, 1706, 1828, 1921, 2051, 2185,
+            2323, 2465, 2611, 2761, 2876, 3034, 3196, 3362, 3532, 3706
         };
 
         // Encodable character set:
@@ -2463,72 +2459,72 @@ namespace QRFocus.Library
         //    EBBFHEX , which can be compacted into 13 bits.)
 
         internal static readonly byte[] EncodingTable =
-            {
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         36, 45, 45, 45, 37, 38, 45, 45, 45, 45, 39, 40, 45, 41, 42, 43,
-          0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 44, 45, 45, 45, 45, 45,
-         45, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-         25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
-         45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+        {
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             36, 45, 45, 45, 37, 38, 45, 45, 45, 45, 39, 40, 45, 41, 42, 43,
+              0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 44, 45, 45, 45, 45, 45,
+             45, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+             25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+             45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
         };
 
         internal static readonly byte[] DecodingTable =
-            {
-        (byte) '0', // 0
-        (byte) '1', // 1
-        (byte) '2', // 2
-        (byte) '3', // 3
-        (byte) '4', // 4
-        (byte) '5', // 5
-        (byte) '6', // 6
-        (byte) '7', // 7
-        (byte) '8', // 8
-        (byte) '9', // 9
-        (byte) 'A', // 10
-        (byte) 'B', // 11
-        (byte) 'C', // 12
-        (byte) 'D', // 13
-        (byte) 'E', // 14
-        (byte) 'F', // 15
-        (byte) 'G', // 16
-        (byte) 'H', // 17
-        (byte) 'I', // 18
-        (byte) 'J', // 19
-        (byte) 'K', // 20
-        (byte) 'L', // 21
-        (byte) 'M', // 22
-        (byte) 'N', // 23
-        (byte) 'O', // 24
-        (byte) 'P', // 25
-        (byte) 'Q', // 26
-        (byte) 'R', // 27
-        (byte) 'S', // 28
-        (byte) 'T', // 29
-        (byte) 'U', // 30
-        (byte) 'V', // 31
-        (byte) 'W', // 32
-        (byte) 'X', // 33
-        (byte) 'Y', // 34
-        (byte) 'Z', // 35
-        (byte) ' ', // 36 (space)
-        (byte) '$', // 37
-        (byte) '%', // 38
-        (byte) '*', // 39
-        (byte) '+', // 40
-        (byte) '-', // 41
-        (byte) '.', // 42
-        (byte) '/', // 43
-        (byte) ':', // 44
+        {
+            (byte) '0', // 0
+            (byte) '1', // 1
+            (byte) '2', // 2
+            (byte) '3', // 3
+            (byte) '4', // 4
+            (byte) '5', // 5
+            (byte) '6', // 6
+            (byte) '7', // 7
+            (byte) '8', // 8
+            (byte) '9', // 9
+            (byte) 'A', // 10
+            (byte) 'B', // 11
+            (byte) 'C', // 12
+            (byte) 'D', // 13
+            (byte) 'E', // 14
+            (byte) 'F', // 15
+            (byte) 'G', // 16
+            (byte) 'H', // 17
+            (byte) 'I', // 18
+            (byte) 'J', // 19
+            (byte) 'K', // 20
+            (byte) 'L', // 21
+            (byte) 'M', // 22
+            (byte) 'N', // 23
+            (byte) 'O', // 24
+            (byte) 'P', // 25
+            (byte) 'Q', // 26
+            (byte) 'R', // 27
+            (byte) 'S', // 28
+            (byte) 'T', // 29
+            (byte) 'U', // 30
+            (byte) 'V', // 31
+            (byte) 'W', // 32
+            (byte) 'X', // 33
+            (byte) 'Y', // 34
+            (byte) 'Z', // 35
+            (byte) ' ', // 36 (space)
+            (byte) '$', // 37
+            (byte) '%', // 38
+            (byte) '*', // 39
+            (byte) '+', // 40
+            (byte) '-', // 41
+            (byte) '.', // 42
+            (byte) '/', // 43
+            (byte) ':', // 44
         };
 
         // Error correction block information
@@ -2542,7 +2538,7 @@ namespace QRFocus.Library
         internal const int DATA_CODEWORDS_GROUP2 = 3;
 
         internal static readonly byte[,] ECBlockInfo =
-                {
+        {
             // A,   B,   C,   D 
             {  1,  19,   0,   0},   // 1-L
             {  1,  16,   0,   0},   // 1-M
@@ -2704,137 +2700,195 @@ namespace QRFocus.Library
             { 18,  47,  31,  48},   // 40-M
             { 34,  24,  34,  25},   // 40-Q
             { 20,  15,  61,  16},   // 40-H
-            };
+        };
 
         internal static readonly byte[] Generator7 =
-            {  87, 229, 146, 149, 238, 102,  21};
+        {
+            87, 229, 146, 149, 238, 102,  21
+        };
         internal static readonly byte[] Generator10 =
-            { 251,  67,  46,  61, 118,  70,  64,  94,  32,  45};
+        {
+            251,  67,  46,  61, 118,  70,  64,  94,  32,  45
+        };
         internal static readonly byte[] Generator13 =
-            {  74, 152, 176, 100,  86, 100, 106, 104, 130, 218, 206, 140,  78};
+        {
+            74, 152, 176, 100,  86, 100, 106, 104, 130, 218, 206, 140,  78
+        };
         internal static readonly byte[] Generator15 =
-            {   8, 183,  61,  91, 202,  37,  51,  58,  58, 237, 140, 124,   5,  99, 105};
+        {
+            8, 183,  61,  91, 202,  37,  51,  58,  58, 237, 140, 124,   5,  99, 105
+        };
         internal static readonly byte[] Generator16 =
-            { 120, 104, 107, 109, 102, 161,  76,   3,  91, 191, 147, 169, 182, 194, 225, 120};
+        {
+            120, 104, 107, 109, 102, 161,  76,   3,  91, 191, 147, 169, 182, 194, 225, 120
+        };
         internal static readonly byte[] Generator17 =
-            {  43, 139, 206,  78,  43, 239, 123, 206, 214, 147,  24,  99, 150,  39, 243, 163,
-          136};
+        {
+            43, 139, 206,  78,  43, 239, 123, 206, 214, 147,  24,  99, 150,  39, 243, 163, 136
+        };
         internal static readonly byte[] Generator18 =
-            { 215, 234, 158,  94, 184,  97, 118, 170,  79, 187, 152, 148, 252, 179,   5,  98,
-           96, 153};
+        {
+            215, 234, 158,  94, 184,  97, 118, 170,  79, 187, 152, 148, 252, 179,   5,  98, 96, 153
+        };
         internal static readonly byte[] Generator20 =
-            {  17,  60,  79,  50,  61, 163,  26, 187, 202, 180, 221, 225,  83, 239, 156, 164,
-          212, 212, 188, 190};
+        {
+            17,  60,  79,  50,  61, 163,  26, 187, 202, 180, 221, 225,  83, 239, 156, 164, 212, 212, 188, 190
+        };
         internal static readonly byte[] Generator22 =
-            { 210, 171, 247, 242,  93, 230,  14, 109, 221,  53, 200,  74,   8, 172,  98,  80,
-          219, 134, 160, 105, 165, 231};
+        {
+            210, 171, 247, 242,  93, 230,  14, 109, 221,  53, 200,  74,   8, 172,  98,  80, 219, 134, 160, 105, 165, 231
+        };
         internal static readonly byte[] Generator24 =
-            { 229, 121, 135,  48, 211, 117, 251, 126, 159, 180, 169, 152, 192, 226, 228, 218,
-          111,   0, 117, 232,  87,  96, 227,  21};
+        {
+            229, 121, 135,  48, 211, 117, 251, 126, 159, 180, 169, 152, 192, 226, 228, 218, 111,   0, 117, 232,  87,  96, 227,  21
+        };
         internal static readonly byte[] Generator26 =
-            { 173, 125, 158,   2, 103, 182, 118,  17, 145, 201, 111,  28, 165,  53, 161,  21,
-          245, 142,  13, 102,  48, 227, 153, 145, 218,  70};
+        {
+            173, 125, 158,   2, 103, 182, 118,  17, 145, 201, 111,  28, 165,  53, 161,  21, 245, 142,  13, 102,  48, 227, 153, 145, 218,  70
+        };
         internal static readonly byte[] Generator28 =
-            { 168, 223, 200, 104, 224, 234, 108, 180, 110, 190, 195, 147, 205,  27, 232, 201,
-           21,  43, 245,  87,  42, 195, 212, 119, 242,  37,   9, 123};
+        {
+            168, 223, 200, 104, 224, 234, 108, 180, 110, 190, 195, 147, 205,  27, 232, 201,
+            21,  43, 245,  87,  42, 195, 212, 119, 242,  37,   9, 123
+        };
         internal static readonly byte[] Generator30 =
-            {  41, 173, 145, 152, 216,  31, 179, 182,  50,  48, 110,  86, 239,  96, 222, 125,
-           42, 173, 226, 193, 224, 130, 156,  37, 251, 216, 238,  40, 192, 180};
+        {
+            41, 173, 145, 152, 216,  31, 179, 182,  50,  48, 110,  86, 239,  96, 222, 125,
+            42, 173, 226, 193, 224, 130, 156,  37, 251, 216, 238,  40, 192, 180
+        };
         internal static readonly byte[] Generator32 =
-            {  10,   6, 106, 190, 249, 167,   4,  67, 209, 138, 138,  32, 242, 123,  89,  27,
-          120, 185,  80, 156,  38,  60, 171,  60,  28, 222,  80,  52, 254, 185, 220, 241};
+        {
+            10,   6, 106, 190, 249, 167,   4,  67, 209, 138, 138,  32, 242, 123,  89,  27,
+            120, 185,  80, 156,  38,  60, 171,  60,  28, 222,  80,  52, 254, 185, 220, 241
+        };
         internal static readonly byte[] Generator34 =
-            { 111,  77, 146,  94,  26,  21, 108,  19, 105,  94, 113, 193,  86, 140, 163, 125,
-           58, 158, 229, 239, 218, 103,  56,  70, 114,  61, 183, 129, 167,  13,  98,  62,
-          129,  51};
+        {
+            111,  77, 146,  94,  26,  21, 108,  19, 105,  94, 113, 193,  86, 140, 163, 125,
+            58, 158, 229, 239, 218, 103,  56,  70, 114,  61, 183, 129, 167,  13,  98,  62,
+            129,  51
+        };
         internal static readonly byte[] Generator36 =
-            { 200, 183,  98,  16, 172,  31, 246, 234,  60, 152, 115,   0, 167, 152, 113, 248,
-          238, 107,  18,  63, 218,  37,  87, 210, 105, 177, 120,  74, 121, 196, 117, 251,
-          113, 233,  30, 120};
+        {
+            200, 183,  98,  16, 172,  31, 246, 234,  60, 152, 115,   0, 167, 152, 113, 248,
+            238, 107,  18,  63, 218,  37,  87, 210, 105, 177, 120,  74, 121, 196, 117, 251,
+            113, 233,  30, 120
+        };
         internal static readonly byte[] Generator40 =
-            {  59, 116,  79, 161, 252,  98, 128, 205, 128, 161, 247,  57, 163,  56, 235, 106,
-           53,  26, 187, 174, 226, 104, 170,   7, 175,  35, 181, 114,  88,  41,  47, 163,
-          125, 134,  72,  20, 232,  53,  35,  15};
+        {
+            59, 116,  79, 161, 252,  98, 128, 205, 128, 161, 247,  57, 163,  56, 235, 106,
+            53,  26, 187, 174, 226, 104, 170,   7, 175,  35, 181, 114,  88,  41,  47, 163,
+            125, 134,  72,  20, 232,  53,  35,  15
+        };
         internal static readonly byte[] Generator42 =
-            { 250, 103, 221, 230,  25,  18, 137, 231,   0,   3,  58, 242, 221, 191, 110,  84,
-          230,   8, 188, 106,  96, 147,  15, 131, 139,  34, 101, 223,  39, 101, 213, 199,
-          237, 254, 201, 123, 171, 162, 194, 117,  50,  96};
+        {
+            250, 103, 221, 230,  25,  18, 137, 231,   0,   3,  58, 242, 221, 191, 110,  84,
+            230,   8, 188, 106,  96, 147,  15, 131, 139,  34, 101, 223,  39, 101, 213, 199,
+            237, 254, 201, 123, 171, 162, 194, 117,  50,  96
+        };
         internal static readonly byte[] Generator44 =
-            { 190,   7,  61, 121,  71, 246,  69,  55, 168, 188,  89, 243, 191,  25,  72, 123,
+        {
+            190,   7,  61, 121,  71, 246,  69,  55, 168, 188,  89, 243, 191,  25,  72, 123,
             9, 145,  14, 247,   1, 238,  44,  78, 143,  62, 224, 126, 118, 114,  68, 163,
-           52, 194, 217, 147, 204, 169,  37, 130, 113, 102,  73, 181};
+            52, 194, 217, 147, 204, 169,  37, 130, 113, 102,  73, 181
+        };
         internal static readonly byte[] Generator46 =
-            { 112,  94,  88, 112, 253, 224, 202, 115, 187,  99,  89,   5,  54, 113, 129,  44,
-           58,  16, 135, 216, 169, 211,  36,   1,   4,  96,  60, 241,  73, 104, 234,   8,
-          249, 245, 119, 174,  52,  25, 157, 224,  43, 202, 223,  19,  82,  15};
+        {
+            112,  94,  88, 112, 253, 224, 202, 115, 187,  99,  89,   5,  54, 113, 129,  44,
+            58,  16, 135, 216, 169, 211,  36,   1,   4,  96,  60, 241,  73, 104, 234,   8,
+            249, 245, 119, 174,  52,  25, 157, 224,  43, 202, 223,  19,  82,  15
+        };
         internal static readonly byte[] Generator48 =
-            { 228,  25, 196, 130, 211, 146,  60,  24, 251,  90,  39, 102, 240,  61, 178,  63,
-           46, 123, 115,  18, 221, 111, 135, 160, 182, 205, 107, 206,  95, 150, 120, 184,
-           91,  21, 247, 156, 140, 238, 191,  11,  94, 227,  84,  50, 163,  39,  34, 108};
+        {
+            228,  25, 196, 130, 211, 146,  60,  24, 251,  90,  39, 102, 240,  61, 178,  63,
+            46, 123, 115,  18, 221, 111, 135, 160, 182, 205, 107, 206,  95, 150, 120, 184,
+            91,  21, 247, 156, 140, 238, 191,  11,  94, 227,  84,  50, 163,  39,  34, 108
+        };
         internal static readonly byte[] Generator50 =
-            { 232, 125, 157, 161, 164,   9, 118,  46, 209,  99, 203, 193,  35,   3, 209, 111,
-          195, 242, 203, 225,  46,  13,  32, 160, 126, 209, 130, 160, 242, 215, 242,  75,
-           77,  42, 189,  32, 113,  65, 124,  69, 228, 114, 235, 175, 124, 170, 215, 232,
-          133, 205};
+        {
+            232, 125, 157, 161, 164,   9, 118,  46, 209,  99, 203, 193,  35,   3, 209, 111,
+            195, 242, 203, 225,  46,  13,  32, 160, 126, 209, 130, 160, 242, 215, 242,  75,
+            77,  42, 189,  32, 113,  65, 124,  69, 228, 114, 235, 175, 124, 170, 215, 232,
+            133, 205
+        };
         internal static readonly byte[] Generator52 =
-            { 116,  50,  86, 186,  50, 220, 251,  89, 192,  46,  86, 127, 124,  19, 184, 233,
-          151, 215,  22,  14,  59, 145,  37, 242, 203, 134, 254,  89, 190,  94,  59,  65,
-          124, 113, 100, 233, 235, 121,  22,  76,  86,  97,  39, 242, 200, 220, 101,  33,
-          239, 254, 116,  51};
+        {
+            116,  50,  86, 186,  50, 220, 251,  89, 192,  46,  86, 127, 124,  19, 184, 233,
+            151, 215,  22,  14,  59, 145,  37, 242, 203, 134, 254,  89, 190,  94,  59,  65,
+            124, 113, 100, 233, 235, 121,  22,  76,  86,  97,  39, 242, 200, 220, 101,  33,
+            239, 254, 116,  51
+        };
         internal static readonly byte[] Generator54 =
-            { 183,  26, 201,  84, 210, 221, 113,  21,  46,  65,  45,  50, 238, 184, 249, 225,
-          102,  58, 209, 218, 109, 165,  26,  95, 184, 192,  52, 245,  35, 254, 238, 175,
-          172,  79, 123,  25, 122,  43, 120, 108, 215,  80, 128, 201, 235,   8, 153,  59,
-          101,  31, 198,  76,  31, 156};
+        {
+            183,  26, 201,  84, 210, 221, 113,  21,  46,  65,  45,  50, 238, 184, 249, 225,
+            102,  58, 209, 218, 109, 165,  26,  95, 184, 192,  52, 245,  35, 254, 238, 175,
+            172,  79, 123,  25, 122,  43, 120, 108, 215,  80, 128, 201, 235,   8, 153,  59,
+            101,  31, 198,  76,  31, 156
+        };
         internal static readonly byte[] Generator56 =
-            { 106, 120, 107, 157, 164, 216, 112, 116,   2,  91, 248, 163,  36, 201, 202, 229,
+        {
+            106, 120, 107, 157, 164, 216, 112, 116,   2,  91, 248, 163,  36, 201, 202, 229,
             6, 144, 254, 155, 135, 208, 170, 209,  12, 139, 127, 142, 182, 249, 177, 174,
-          190,  28,  10,  85, 239, 184, 101, 124, 152, 206,  96,  23, 163,  61,  27, 196,
-          247, 151, 154, 202, 207,  20,  61,  10};
+            190,  28,  10,  85, 239, 184, 101, 124, 152, 206,  96,  23, 163,  61,  27, 196,
+            247, 151, 154, 202, 207,  20,  61,  10
+        };
         internal static readonly byte[] Generator58 =
-            {  82, 116,  26, 247,  66,  27,  62, 107, 252, 182, 200, 185, 235,  55, 251, 242,
-          210, 144, 154, 237, 176, 141, 192, 248, 152, 249, 206,  85, 253, 142,  65, 165,
-          125,  23,  24,  30, 122, 240, 214,   6, 129, 218,  29, 145, 127, 134, 206, 245,
-          117,  29,  41,  63, 159, 142, 233, 125, 148, 123};
+        {
+            82, 116,  26, 247,  66,  27,  62, 107, 252, 182, 200, 185, 235,  55, 251, 242,
+            210, 144, 154, 237, 176, 141, 192, 248, 152, 249, 206,  85, 253, 142,  65, 165,
+            125,  23,  24,  30, 122, 240, 214,   6, 129, 218,  29, 145, 127, 134, 206, 245,
+            117,  29,  41,  63, 159, 142, 233, 125, 148, 123
+        };
         internal static readonly byte[] Generator60 =
-            { 107, 140,  26,  12,   9, 141, 243, 197, 226, 197, 219,  45, 211, 101, 219, 120,
-           28, 181, 127,   6, 100, 247,   2, 205, 198,  57, 115, 219, 101, 109, 160,  82,
-           37,  38, 238,  49, 160, 209, 121,  86,  11, 124,  30, 181,  84,  25, 194,  87,
-           65, 102, 190, 220,  70,  27, 209,  16,  89,   7,  33, 240};
+        {
+            107, 140,  26,  12,   9, 141, 243, 197, 226, 197, 219,  45, 211, 101, 219, 120,
+            28, 181, 127,   6, 100, 247,   2, 205, 198,  57, 115, 219, 101, 109, 160,  82,
+            37,  38, 238,  49, 160, 209, 121,  86,  11, 124,  30, 181,  84,  25, 194,  87,
+            65, 102, 190, 220,  70,  27, 209,  16,  89,   7,  33, 240
+        };
         internal static readonly byte[] Generator62 =
-            {  65, 202, 113,  98,  71, 223, 248, 118, 214,  94,   0, 122,  37,  23,   2, 228,
-           58, 121,   7, 105, 135,  78, 243, 118,  70,  76, 223,  89,  72,  50,  70, 111,
-          194,  17, 212, 126, 181,  35, 221, 117, 235,  11, 229, 149, 147, 123, 213,  40,
-          115,   6, 200, 100,  26, 246, 182, 218, 127, 215,  36, 186, 110, 106};
+        {
+            65, 202, 113,  98,  71, 223, 248, 118, 214,  94,   0, 122,  37,  23,   2, 228,
+            58, 121,   7, 105, 135,  78, 243, 118,  70,  76, 223,  89,  72,  50,  70, 111,
+            194,  17, 212, 126, 181,  35, 221, 117, 235,  11, 229, 149, 147, 123, 213,  40,
+            115,   6, 200, 100,  26, 246, 182, 218, 127, 215,  36, 186, 110, 106
+        };
         internal static readonly byte[] Generator64 =
-            {  45,  51, 175,   9,   7, 158, 159,  49,  68, 119,  92, 123, 177, 204, 187, 254,
-          200,  78, 141, 149, 119,  26, 127,  53, 160,  93, 199, 212,  29,  24, 145, 156,
-          208, 150, 218, 209,   4, 216,  91,  47, 184, 146,  47, 140, 195, 195, 125, 242,
-          238,  63,  99, 108, 140, 230, 242,  31, 204,  11, 178, 243, 217, 156, 213, 231};
+        {
+            45,  51, 175,   9,   7, 158, 159,  49,  68, 119,  92, 123, 177, 204, 187, 254,
+            200,  78, 141, 149, 119,  26, 127,  53, 160,  93, 199, 212,  29,  24, 145, 156,
+            208, 150, 218, 209,   4, 216,  91,  47, 184, 146,  47, 140, 195, 195, 125, 242,
+            238,  63,  99, 108, 140, 230, 242,  31, 204,  11, 178, 243, 217, 156, 213, 231
+        };
         internal static readonly byte[] Generator66 =
-            {   5, 118, 222, 180, 136, 136, 162,  51,  46, 117,  13, 215,  81,  17, 139, 247,
+        {
+            5, 118, 222, 180, 136, 136, 162,  51,  46, 117,  13, 215,  81,  17, 139, 247,
           197, 171,  95, 173,  65, 137, 178,  68, 111,  95, 101,  41,  72, 214, 169, 197,
            95,   7,  44, 154,  77, 111, 236,  40, 121, 143,  63,  87,  80, 253, 240, 126,
           217,  77,  34, 232, 106,  50, 168,  82,  76, 146,  67, 106, 171,  25, 132,  93,
-           45, 105};
+           45, 105
+        };
         internal static readonly byte[] Generator68 =
-            { 247, 159, 223,  33, 224,  93,  77,  70,  90, 160,  32, 254,  43, 150,  84, 101,
-          190, 205, 133,  52,  60, 202, 165, 220, 203, 151,  93,  84,  15,  84, 253, 173,
-          160,  89, 227,  52, 199,  97,  95, 231,  52, 177,  41, 125, 137, 241, 166, 225,
-          118,   2,  54,  32,  82, 215, 175, 198,  43, 238, 235,  27, 101, 184, 127,   3,
-            5,   8, 163, 238};
+        {
+            247, 159, 223,  33, 224,  93,  77,  70,  90, 160,  32, 254,  43, 150,  84, 101,
+            190, 205, 133,  52,  60, 202, 165, 220, 203, 151,  93,  84,  15,  84, 253, 173,
+            160,  89, 227,  52, 199,  97,  95, 231,  52, 177,  41, 125, 137, 241, 166, 225,
+            118,   2,  54,  32,  82, 215, 175, 198,  43, 238, 235,  27, 101, 184, 127,   3,
+            5,   8, 163, 238
+        };
 
         internal static readonly byte[][] GenArray =
-            { Generator7, null, null, Generator10, null, null, Generator13, null, Generator15, Generator16,
-          Generator17, Generator18, null, Generator20, null, Generator22, null, Generator24, null, Generator26,
-          null, Generator28, null, Generator30, null, Generator32, null, Generator34, null, Generator36,
-          null, null, null, Generator40, null, Generator42, null, Generator44, null, Generator46,
-          null, Generator48, null, Generator50, null, Generator52, null, Generator54, null, Generator56,
-          null, Generator58, null, Generator60, null, Generator62, null, Generator64, null, Generator66,
-          null, Generator68};
+        {
+            Generator7, null, null, Generator10, null, null, Generator13, null, Generator15, Generator16,
+            Generator17, Generator18, null, Generator20, null, Generator22, null, Generator24, null, Generator26,
+            null, Generator28, null, Generator30, null, Generator32, null, Generator34, null, Generator36,
+            null, null, null, Generator40, null, Generator42, null, Generator44, null, Generator46,
+            null, Generator48, null, Generator50, null, Generator52, null, Generator54, null, Generator56,
+            null, Generator58, null, Generator60, null, Generator62, null, Generator64, null, Generator66,
+            null, Generator68
+        };
 
         internal static readonly byte[] ExpToInt = //   ExpToInt =
-                {
+        {
                1,   2,   4,   8,  16,  32,  64, 128,  29,  58, 116, 232, 205, 135,  19,  38,
               76, 152,  45,  90, 180, 117, 234, 201, 143,   3,   6,  12,  24,  48,  96, 192,
              157,  39,  78, 156,  37,  74, 148,  53, 106, 212, 181, 119, 238, 193, 159,  35,
@@ -2868,10 +2922,10 @@ namespace QRFocus.Library
               81, 162,  89, 178, 121, 242, 249, 239, 195, 155,  43,  86, 172,  69, 138,   9,
               18,  36,  72, 144,  61, 122, 244, 245, 247, 243, 251, 235, 203, 139,  11,  22,
               44,  88, 176, 125, 250, 233, 207, 131,  27,  54, 108, 216, 173,  71, 142,   1
-            };
+        };
 
         internal static readonly byte[] IntToExp = //   IntToExp =
-                {
+        {
                0,   0,   1,  25,   2,  50,  26, 198,   3, 223,  51, 238,  27, 104, 199,  75,
                4, 100, 224,  14,  52, 141, 239, 129,  28, 193, 105, 248, 200,   8,  76, 113,
                5, 138, 101,  47, 225,  36,  15,  33,  53, 147, 142, 218, 240,  18, 130,  69,
@@ -2888,35 +2942,35 @@ namespace QRFocus.Library
              108, 161,  59,  82,  41, 157,  85, 170, 251,  96, 134, 177, 187, 204,  62,  90,
              203,  89,  95, 176, 156, 169, 160,  81,  11, 245,  22, 235, 122, 117,  44, 215,
               79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168,  80,  88, 175
-            };
+        };
 
         internal static readonly int[] FormatInfoArray =
-                {
+        {
             0x5412, 0x5125, 0x5E7C, 0x5B4B, 0x45F9, 0x40CE, 0x4F97, 0x4AA0,     // M = 00
             0x77C4, 0x72F3, 0x7DAA, 0x789D, 0x662F, 0x6318, 0x6C41, 0x6976,     // L = 01
             0x1689, 0x13BE, 0x1CE7, 0x19D0,  0x762,  0x255,  0xD0C,  0x83B,     // H - 10
             0x355F, 0x3068, 0x3F31, 0x3A06, 0x24B4, 0x2183, 0x2EDA, 0x2BED,     // Q = 11
-            };
+        };
 
         internal static readonly int[,] FormatInfoOne = new int[,]
-                {
+        {
             {0, 8}, {1, 8}, {2, 8}, {3, 8}, {4, 8}, {5, 8}, {7, 8}, {8, 8},
             {8, 7}, {8, 5}, {8, 4}, {8, 3}, {8, 2}, {8, 1}, {8, 0}
-                };
+        };
 
         internal static readonly int[,] FormatInfoTwo = new int[,]
-                {
+        {
             {8, -1}, {8, -2}, {8, -3}, {8, -4}, {8, -5}, {8, -6}, {8, -7}, {8, -8},
             {-7, 8}, {-6, 8}, {-5, 8}, {-4, 8}, {-3, 8}, {-2, 8}, {-1, 8}
-                };
+        };
 
         internal static readonly int[] VersionCodeArray =
-                {
+        {
              0x7c94,  0x85bc,  0x9a99,  0xa4d3,  0xbbf6,  0xc762,  0xd847,  0xe60d,  0xf928, 0x10b78,
             0x1145d, 0x12a17, 0x13532, 0x149a6, 0x15683, 0x168c9, 0x177ec, 0x18ec4, 0x191e1, 0x1afab,
             0x1b08e, 0x1cc1a, 0x1d33f, 0x1ed75, 0x1f250, 0x209d5, 0x216f0, 0x228ba, 0x2379f, 0x24b0b,
             0x2542e, 0x26a64, 0x27541, 0x28c69
-            };
+        };
 
         internal const byte White = 0;
         internal const byte Black = 1;
@@ -2930,51 +2984,53 @@ namespace QRFocus.Library
         internal const byte FixedBlack = Fixed | NonData | Black;
 
         internal static readonly byte[,] FinderPatternTopLeft =
-            {
-        {FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FormatWhite},
-        {FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FormatWhite},
-        {FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite},
+        {
+            {FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FormatWhite},
+            {FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FormatWhite},
+            {FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite},
         };
 
         internal static readonly byte[,] FinderPatternTopRight =
-            {
-        {FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack},
-        {FixedWhite,  FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack},
-        {FixedWhite,  FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack},
-        {FixedWhite,  FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack},
-        {FixedWhite,  FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack},
-        {FixedWhite,  FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack},
-        {FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack},
-        {FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite},
-        {FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite},
+        {
+            {FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack},
+            {FixedWhite,  FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack},
+            {FixedWhite,  FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack},
+            {FixedWhite,  FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack},
+            {FixedWhite,  FixedBlack,  FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedWhite,  FixedBlack},
+            {FixedWhite,  FixedBlack,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedBlack},
+            {FixedWhite,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack,  FixedBlack},
+            {FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite,  FixedWhite},
+            {FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite, FormatWhite},
         };
 
         internal static readonly byte[,] FinderPatternBottomLeft =
-            {
-        {FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedBlack},
-        {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FormatWhite},
-        {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
-        {FixedBlack, FixedWhite, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
-        {FixedBlack, FixedWhite, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
-        {FixedBlack, FixedWhite, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
-        {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
-        {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FormatWhite},
+        {
+            {FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedBlack},
+            {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FormatWhite},
+            {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
+            {FixedBlack, FixedWhite, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
+            {FixedBlack, FixedWhite, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
+            {FixedBlack, FixedWhite, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
+            {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedWhite, FixedBlack, FixedWhite, FormatWhite},
+            {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedWhite, FormatWhite},
         };
 
         internal static readonly byte[,] AlignmentPattern =
-            {
-        {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack},
-        {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedBlack},
-        {FixedBlack, FixedWhite, FixedBlack, FixedWhite, FixedBlack},
-        {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedBlack},
-        {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack},
+        {
+            {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack},
+            {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedBlack},
+            {FixedBlack, FixedWhite, FixedBlack, FixedWhite, FixedBlack},
+            {FixedBlack, FixedWhite, FixedWhite, FixedWhite, FixedBlack},
+            {FixedBlack, FixedBlack, FixedBlack, FixedBlack, FixedBlack},
         };
+        #endregion
+
         #endregion
     }
 }
