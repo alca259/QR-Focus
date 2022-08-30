@@ -1,10 +1,10 @@
 ﻿using Docnet.Core;
 using Docnet.Core.Models;
+using Docnet.Core.Readers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace QRFocus.Library
@@ -129,39 +129,7 @@ namespace QRFocus.Library
 
             var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(ppi));
 
-            var pageCount = docReader.GetPageCount();
-            pageIndex = Math.Abs(pageIndex);
-            if (pageIndex >= pageCount) throw new ApplicationException("Page index out of bounds.");
-
-            using (var pageReader = docReader.GetPageReader(pageIndex))
-            {
-                var rawBytes = pageReader.GetImage();
-
-                var width = pageReader.GetPageWidth();
-                var height = pageReader.GetPageHeight();
-
-                var characters = pageReader.GetCharacters();
-
-                // load file image to bitmap
-                using (var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb))
-                {
-                    AddBytes(bmp, rawBytes);
-                    //DrawRectangles(bmp, characters);
-
-                    var bnBmp = ConvertBitmapToBlackAndWhite(bmp, Color.White);
-
-#if DEBUG
-                    var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
-                    var currFileName = Path.GetFileNameWithoutExtension(fileName);
-                    var imageFileName = Path.Combine(Path.GetDirectoryName(fileName), $"{currFileName}_{tempFileName}.jpg");
-                    bnBmp.Save(imageFileName, ImageFormat.Jpeg);
-                    System.Diagnostics.Debug.WriteLine($"Saved png image at {imageFileName}");
-#endif
-
-                    // decode bitmap
-                    return ImageDecoder(bnBmp);
-                }
-            }
+            return InternalPDFDecoder(docReader, pageIndex);
         }
 
         /// <summary>
@@ -186,6 +154,12 @@ namespace QRFocus.Library
 
             var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(viewportWidth, viewportHeight));
 
+            return InternalPDFDecoder(docReader, pageIndex);
+        }
+
+        #region Pdf aux methods
+        private IEnumerable<QRCodeResult> InternalPDFDecoder(IDocReader docReader, int pageIndex = 0)
+        {
             var pageCount = docReader.GetPageCount();
             pageIndex = Math.Abs(pageIndex);
             if (pageIndex >= pageCount) throw new ApplicationException("Page index out of bounds.");
@@ -197,31 +171,20 @@ namespace QRFocus.Library
                 var width = pageReader.GetPageWidth();
                 var height = pageReader.GetPageHeight();
 
-                var characters = pageReader.GetCharacters();
-
                 // load file image to bitmap
                 using (var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb))
                 {
                     AddBytes(bmp, rawBytes);
-                    //DrawRectangles(bmp, characters);
 
-                    var bnBmp = ConvertBitmapToBlackAndWhite(bmp, Color.White);
-
-#if DEBUG
-                    var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
-                    var currFileName = Path.GetFileNameWithoutExtension(fileName);
-                    var imageFileName = Path.Combine(Path.GetDirectoryName(fileName), $"{currFileName}_{tempFileName}.jpg");
-                    bnBmp.Save(imageFileName, ImageFormat.Jpeg);
-                    System.Diagnostics.Debug.WriteLine($"Saved png image at {imageFileName}");
-#endif
-
-                    // decode bitmap
-                    return ImageDecoder(bnBmp);
+                    using (var bnBmp = ConvertBitmapToBlackAndWhite(bmp, Color.White))
+                    {
+                        // decode bitmap
+                        return ImageDecoder(bnBmp);
+                    }
                 }
             }
         }
 
-        #region Pdf aux methods
         private static void AddBytes(Bitmap bmp, byte[] rawBytes)
         {
             var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
@@ -231,20 +194,6 @@ namespace QRFocus.Library
 
             Marshal.Copy(rawBytes, 0, pNative, rawBytes.Length);
             bmp.UnlockBits(bmpData);
-        }
-
-        private static void DrawRectangles(Bitmap bmp, IEnumerable<Character> characters)
-        {
-            var pen = new Pen(Color.Red);
-
-            using (var graphics = Graphics.FromImage(bmp))
-            {
-                foreach (var c in characters)
-                {
-                    var rect = new Rectangle(c.Box.Left, c.Box.Top, c.Box.Right - c.Box.Left, c.Box.Bottom - c.Box.Top);
-                    graphics.DrawRectangle(pen, rect);
-                }
-            }
         }
         #endregion
 
@@ -916,6 +865,7 @@ namespace QRFocus.Library
             {
                 // initial version number
                 QRCodeVersion = Corner.InitialVersionNumber();
+                if (QRCodeVersion == -1) return false;
 
                 // qr code dimension
                 QRCodeDimension = 17 + 4 * QRCodeVersion;
@@ -982,7 +932,7 @@ namespace QRFocus.Library
                 BuildBaseMatrix();
 
                 // create data matrix and test fixed modules
-                ConvertImageToMatrix();
+                if (!ConvertImageToMatrix()) return false;
 
                 // based on version and format information
                 // set number of data and error correction codewords length  
@@ -999,7 +949,7 @@ namespace QRFocus.Library
 
                 // calculate error correction
                 // in case of error try to correct it
-                CalculateErrorCorrection();
+                if (!CalculateErrorCorrection()) return false;
 
                 // decode data
                 byte[] DataArray = DecodeData();
@@ -1430,13 +1380,13 @@ namespace QRFocus.Library
         /// <summary>
         /// Convert image to qr code matrix and test fixed modules
         /// </summary>
-        /// <exception cref="ApplicationException"></exception>
-        internal void ConvertImageToMatrix()
+        internal bool ConvertImageToMatrix()
         {
             // loop for all modules
             int FixedCount = 0;
             int ErrorCount = 0;
             for (int Row = 0; Row < QRCodeDimension; Row++)
+            {
                 for (int Col = 0; Col < QRCodeDimension; Col++)
                 {
                     // the module (Row, Col) is not a fixed module 
@@ -1455,10 +1405,9 @@ namespace QRFocus.Library
                         if ((GetModule(Row, Col) ? Black : White) != (BaseMatrix[Row, Col] & 1)) ErrorCount++;
                     }
                 }
+            }
 
-            if (ErrorCount > FixedCount * QRFocusSettings.Instance.ErrorTolerancePercent[ErrorCorrection] / 100)
-                throw new ApplicationException("Fixed modules error");
-            return;
+            return ErrorCount <= FixedCount * QRFocusSettings.Instance.ErrorTolerancePercent[ErrorCorrection] / 100;
         }
 
         /// <summary>
@@ -1614,7 +1563,7 @@ namespace QRFocus.Library
         /// Calculate Error Correction
         /// </summary>
         /// <exception cref="ApplicationException"></exception>
-        protected void CalculateErrorCorrection()
+        protected bool CalculateErrorCorrection()
         {
             // total error count
             int TotalErrorCount = 0;
@@ -1667,7 +1616,8 @@ namespace QRFocus.Library
                     int ErrorCount = CorrectData(CorrectionBuffer, BuffLen, ErrCorrCodewords);
                     if (ErrorCount <= 0)
                     {
-                        throw new ApplicationException("Data is damaged. Error correction failed");
+                        //throw new ApplicationException("Data is damaged. Error correction failed");
+                        return false;
                     }
 
                     TotalErrorCount += ErrorCount;
@@ -1683,7 +1633,7 @@ namespace QRFocus.Library
                 CodewordsArrayErrCorrPtr += ErrCorrCodewords;
             }
 
-            return;
+            return true;
         }
 
 

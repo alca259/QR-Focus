@@ -161,7 +161,8 @@ namespace QRFocus.Library
 
             // not a valid corner
             if (version < 1 || version > 40)
-                throw new ApplicationException("Corner is not valid (version number must be 1 to 40)");
+                //throw new ApplicationException("Corner is not valid (version number must be 1 to 40)");
+                return -1;
 
             // exit with version number
             return version;
