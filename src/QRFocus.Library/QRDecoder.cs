@@ -1,7 +1,4 @@
-﻿using Docnet.Core;
-using Docnet.Core.Models;
-using Docnet.Core.Readers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -76,137 +73,15 @@ namespace QRFocus.Library
 
         #region Public methods
         /// <summary>
-        /// Return number of pages on a PDF file
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="ppi">Page scaling PPI factor.</param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        public int PDFPageCount(string fileName, double ppi = 1.0, string password = null)
-        {
-            // test argument
-            if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
-
-            var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(ppi));
-            return docReader.GetPageCount();
-        }
-
-        /// <summary>
-        /// Return number of pages on a PDF file
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="viewportWidth">Smaller dimension.</param>
-        /// <param name="viewportHeight">Larger dimension.</param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// Get page dimension options for this particular document. viewportWidth x viewportHeight represents
-        /// a viewport to which the document gets scaled to fit without modifying it's aspect
-        /// ratio.
-        /// </remarks>
-        public int PDFPageCount(string fileName, int viewportWidth = 1080, int viewportHeight = 1920, string password = null)
-        {
-            // test argument
-            if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
-
-            var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(viewportWidth, viewportHeight));
-            return docReader.GetPageCount();
-        }
-
-        /// <summary>
-        /// QR Code decode pdf file
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="pageIndex">0-Index</param>
-        /// <param name="password"></param>
-        /// <param name="ppi">Page scaling PPI factor.</param>
-        /// <returns></returns>
-        /// <exception cref="ApplicationException"></exception>
-        public IEnumerable<QRCodeResult> PDFDecoder(string fileName, int pageIndex = 0, double ppi = 1.0, string password = null)
-        {
-            // test argument
-            if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
-
-            var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(ppi));
-
-            return InternalPDFDecoder(docReader, pageIndex);
-        }
-
-        /// <summary>
-        /// QR Code decode pdf file.
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="pageIndex">0-Index</param>
-        /// <param name="password"></param>
-        /// <param name="viewportWidth">Smaller dimension.</param>
-        /// <param name="viewportHeight">Larger dimension.</param>
-        /// <returns></returns>
-        /// <exception cref="ApplicationException"></exception>
-        /// <remarks>
-        /// Get page dimension options for this particular document. viewportWidth x viewportHeight represents
-        /// a viewport to which the document gets scaled to fit without modifying it's aspect
-        /// ratio.
-        /// </remarks>
-        public IEnumerable<QRCodeResult> PDFDecoderSized(string fileName, int pageIndex = 0, int viewportWidth = 1080, int viewportHeight = 1920, string password = null)
-        {
-            // test argument
-            if (fileName == null) throw new ApplicationException("QRDecoder.PDFDecoder File name is null");
-
-            var docReader = DocLib.Instance.GetDocReader(fileName, password, new PageDimensions(viewportWidth, viewportHeight));
-
-            return InternalPDFDecoder(docReader, pageIndex);
-        }
-
-        #region Pdf aux methods
-        private IEnumerable<QRCodeResult> InternalPDFDecoder(IDocReader docReader, int pageIndex = 0)
-        {
-            var pageCount = docReader.GetPageCount();
-            pageIndex = Math.Abs(pageIndex);
-            if (pageIndex >= pageCount) throw new ApplicationException("Page index out of bounds.");
-
-            using (var pageReader = docReader.GetPageReader(pageIndex))
-            {
-                var rawBytes = pageReader.GetImage();
-
-                var width = pageReader.GetPageWidth();
-                var height = pageReader.GetPageHeight();
-
-                // load file image to bitmap
-                using (var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb))
-                {
-                    AddBytes(bmp, rawBytes);
-
-                    using (var bnBmp = ConvertBitmapToBlackAndWhite(bmp, Color.White))
-                    {
-                        // decode bitmap
-                        return ImageDecoder(bnBmp);
-                    }
-                }
-            }
-        }
-
-        private static void AddBytes(Bitmap bmp, byte[] rawBytes)
-        {
-            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-
-            var bmpData = bmp.LockBits(rect, ImageLockMode.WriteOnly, bmp.PixelFormat);
-            var pNative = bmpData.Scan0;
-
-            Marshal.Copy(rawBytes, 0, pNative, rawBytes.Length);
-            bmp.UnlockBits(bmpData);
-        }
-        #endregion
-
-        /// <summary>
         /// QR Code decode image file
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns>Array of QRCodeResult</returns>
         /// <exception cref="ApplicationException"></exception>
-        public IEnumerable<QRCodeResult> ImageDecoder(string fileName)
+        public IEnumerable<QRCodeResult> Decode(string fileName)
         {
             // test argument
-            if (fileName == null) throw new ApplicationException("QRDecoder.ImageDecoder File name is null");
+            if (fileName == null) throw new ApplicationException($"{nameof(QRDecoder)}.{nameof(Decode)} File name is null");
 
             // load file image to bitmap
             Bitmap inputImageBitmap;
@@ -220,7 +95,7 @@ namespace QRFocus.Library
             }
 
             // decode bitmap
-            return ImageDecoder(inputImageBitmap);
+            return Decode(inputImageBitmap);
         }
 
         /// <summary>
@@ -228,7 +103,7 @@ namespace QRFocus.Library
         /// </summary>
         /// <param name="inputImageBitmap">Input image</param>
         /// <returns>Output byte arrays</returns>
-        public IEnumerable<QRCodeResult> ImageDecoder(Bitmap inputImageBitmap)
+        public IEnumerable<QRCodeResult> Decode(Bitmap inputImageBitmap)
         {
             try
             {
@@ -251,7 +126,7 @@ namespace QRFocus.Library
                 // remove unused finders
                 if (!RemoveUnusedFinders()) return DataArrayList;
             }
-            catch
+            catch (Exception ex)
             {
                 return DataArrayList;
             }
@@ -278,7 +153,6 @@ namespace QRFocus.Library
                             // continue if failed
                             if (!GetQRCodeCornerInfo(corner)) continue;
 
-
                             // decode corner using three finders
                             // continue if successful
                             if (DecodeQRCodeCorner()) continue;
@@ -301,7 +175,7 @@ namespace QRFocus.Library
                                 if (DecodeQRCodeCorner()) break;
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             continue;
                         }
@@ -321,39 +195,8 @@ namespace QRFocus.Library
         #endregion
 
         #region Private methods
-        internal Bitmap ConvertBitmapToBlackAndWhite(Bitmap inputImage, Color target)
-        {
-            int width = inputImage.Width;
-            int height = inputImage.Height;
 
-            var cloned = new Bitmap(width, height);
-            Rectangle rect = new Rectangle(Point.Empty, inputImage.Size);
-
-            using (Graphics gr = Graphics.FromImage(cloned)) // SourceImage is a Bitmap object
-            {
-                //gr.DrawImage(inputImage, new Rectangle(0, 0, width, height));
-                gr.Clear(target);
-                gr.DrawImageUnscaledAndClipped(inputImage, rect);
-
-                var gray_matrix = new float[][]
-                {
-                    new float[] { 0.299f, 0.299f, 0.299f, 0, 0 },
-                    new float[] { 0.587f, 0.587f, 0.587f, 0, 0 },
-                    new float[] { 0.114f, 0.114f, 0.114f, 0, 0 },
-                    new float[] { 0,      0,      0,      1, 0 },
-                    new float[] { 0,      0,      0,      0, 1 }
-                };
-
-                var ia = new ImageAttributes();
-                ia.SetColorMatrix(new ColorMatrix(gray_matrix));
-                ia.SetThreshold(QRFocusSettings.Instance.BlackAndWhiteThreshold);
-                var rc = new Rectangle(0, 0, width, height);
-                gr.DrawImage(cloned, rc, 0, 0, width, height, GraphicsUnit.Pixel, ia);
-            }
-
-            return cloned;
-        }
-
+        #region Tratamiento de imagen
         /// <summary>
         /// Convert image to black and white boolean matrix
         /// </summary>
@@ -362,8 +205,14 @@ namespace QRFocus.Library
         internal bool ConvertImageToBlackAndWhite(Bitmap inputImage)
         {
             // lock image bits
-            BitmapData bitmapData = inputImage.LockBits(new Rectangle(0, 0, ImageWidth, ImageHeight),
-                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            BitmapData bitmapData = inputImage.LockBits(
+                rect: new Rectangle(
+                    x: 0,
+                    y: 0,
+                    width: ImageWidth,
+                    height: ImageHeight),
+                flags: ImageLockMode.ReadOnly,
+                format: PixelFormat.Format24bppRgb);
 
             // address of first line
             IntPtr bitArrayPtr = bitmapData.Scan0;
@@ -428,6 +277,16 @@ namespace QRFocus.Library
             return true;
         }
 
+        private bool IsOutOfBounds(int row, int col)
+        {
+            if (row < 0 || col < 0) return true;
+            if (row >= ImageHeight || col >= ImageWidth) return true;
+
+            return false;
+        }
+        #endregion
+
+        #region Buscadores de marcas en QR
         /// <summary>
         /// search row by row for finders blocks
         /// </summary>
@@ -444,8 +303,9 @@ namespace QRFocus.Library
             for (int Row = 0; Row < ImageHeight; Row++)
             {
                 // look for first black pixel
-                int col;
-                for (col = 0; col < ImageWidth && !BlackWhiteImage[Row, col]; col++) ;
+                int col = 0;
+
+                for (col = 0; col < ImageWidth && !IsOutOfBounds(Row, col) && !BlackWhiteImage[Row, col]; col++) ;
                 if (col == ImageWidth) continue;
 
                 // first black
@@ -457,12 +317,12 @@ namespace QRFocus.Library
                 {
                     // look for next white
                     // if black is all the way to the edge, set next white after the edge
-                    for (; col < ImageWidth && BlackWhiteImage[Row, col]; col++) ;
+                    for (; col < ImageWidth && !IsOutOfBounds(Row, col) && BlackWhiteImage[Row, col]; col++) ;
                     colPos[posPtr++] = col;
                     if (col == ImageWidth) break;
 
                     // look for next black
-                    for (; col < ImageWidth && !BlackWhiteImage[Row, col]; col++) ;
+                    for (; col < ImageWidth && !IsOutOfBounds(Row, col) && !BlackWhiteImage[Row, col]; col++) ;
                     if (col == ImageWidth) break;
                     colPos[posPtr++] = col;
                 }
@@ -495,79 +355,6 @@ namespace QRFocus.Library
         }
 
         /// <summary>
-        /// Search row by row for alignment blocks
-        /// </summary>
-        /// <param name="areaLeft"></param>
-        /// <param name="areaTop"></param>
-        /// <param name="areaWidth"></param>
-        /// <param name="areaHeight"></param>
-        /// <returns></returns>
-        internal bool HorizontalAlignmentSearch(
-            int areaLeft,
-            int areaTop,
-            int areaWidth,
-            int areaHeight)
-        {
-            // create empty finders list
-            AlignList = new List<QRCodeFinder>();
-
-            // look for finder patterns
-            int[] colPos = new int[areaWidth + 1];
-
-            // area right and bottom
-            int areaRight = areaLeft + areaWidth;
-            int areaBottom = areaTop + areaHeight;
-
-            // scan one row at a time
-            for (int row = areaTop; row < areaBottom; row++)
-            {
-                // look for first black pixel
-                int col;
-                for (col = areaLeft; col < areaRight && !BlackWhiteImage[row, col]; col++) ;
-                if (col == areaRight) continue;
-
-                // first black
-                int posPtr = 0;
-                colPos[posPtr++] = col;
-
-                // loop for pairs
-                for (; ; )
-                {
-                    // look for next white
-                    // if black is all the way to the edge, set next white after the edge
-                    for (; col < areaRight && BlackWhiteImage[row, col]; col++) ;
-                    colPos[posPtr++] = col;
-                    if (col == areaRight) break;
-
-                    // look for next black
-                    for (; col < areaRight && !BlackWhiteImage[row, col]; col++) ;
-                    if (col == areaRight) break;
-                    colPos[posPtr++] = col;
-                }
-
-                // we must have at least 6 positions
-                if (posPtr < 6) continue;
-
-                // build length array
-                int posLen = posPtr - 1;
-                int[] len = new int[posLen];
-                for (int ptr = 0; ptr < posLen; ptr++)
-                    len[ptr] = colPos[ptr + 1] - colPos[ptr];
-
-                // test signature
-                int sigLen = posPtr - 5;
-                for (int sigPtr = 0; sigPtr < sigLen; sigPtr += 2)
-                {
-                    if (TestAlignSig(colPos, len, sigPtr, out double moduleSize))
-                        AlignList.Add(new QRCodeFinder(row, colPos[sigPtr + 2], colPos[sigPtr + 3], moduleSize));
-                }
-            }
-
-            // exit
-            return AlignList.Count != 0;
-        }
-
-        /// <summary>
         /// Search column by column for finders blocks
         /// </summary>
         internal void VerticalFindersSearch()
@@ -589,8 +376,9 @@ namespace QRFocus.Library
                 if (!activeColumn[col]) continue;
 
                 // look for first black pixel
-                int row;
-                for (row = 0; row < ImageHeight && !BlackWhiteImage[row, col]; row++) ;
+                int row = 0;
+
+                for (row = 0; row < ImageHeight && !IsOutOfBounds(row, col) && !BlackWhiteImage[row, col]; row++) ;
                 if (row == ImageWidth) continue;
 
                 // first black
@@ -602,12 +390,12 @@ namespace QRFocus.Library
                 {
                     // look for next white
                     // if black is all the way to the edge, set next white after the edge
-                    for (; row < ImageHeight && BlackWhiteImage[row, col]; row++) ;
+                    for (; row < ImageHeight && !IsOutOfBounds(row, col) && BlackWhiteImage[row, col]; row++) ;
                     rowPos[posPtr++] = row;
                     if (row == ImageHeight) break;
 
                     // look for next black
-                    for (; row < ImageHeight && !BlackWhiteImage[row, col]; row++) ;
+                    for (; row < ImageHeight && !IsOutOfBounds(row, col) && !BlackWhiteImage[row, col]; row++) ;
                     if (row == ImageHeight) break;
                     rowPos[posPtr++] = row;
                 }
@@ -637,7 +425,81 @@ namespace QRFocus.Library
         }
 
         /// <summary>
-        /// search column by column for finders blocks
+        /// Search row by row for alignment blocks
+        /// </summary>
+        /// <param name="areaLeft"></param>
+        /// <param name="areaTop"></param>
+        /// <param name="areaWidth"></param>
+        /// <param name="areaHeight"></param>
+        /// <returns></returns>
+        internal bool HorizontalAlignmentSearch(
+            int areaLeft,
+            int areaTop,
+            int areaWidth,
+            int areaHeight)
+        {
+            // create empty finders list
+            AlignList = new List<QRCodeFinder>();
+
+            // look for finder patterns
+            int[] colPos = new int[areaWidth + 1];
+
+            // area right and bottom
+            int areaRight = areaLeft + areaWidth;
+            int areaBottom = areaTop + areaHeight;
+
+            // scan one row at a time
+            for (int row = areaTop; row < areaBottom; row++)
+            {
+                // look for first black pixel
+                int col = areaLeft;
+                for (col = areaLeft; col < areaRight && !IsOutOfBounds(row, col) && !BlackWhiteImage[row, col]; col++) ;
+
+                if (col == areaRight) continue;
+
+                // first black
+                int posPtr = 0;
+                colPos[posPtr++] = col;
+
+                // loop for pairs
+                for (; ; )
+                {
+                    // look for next white
+                    // if black is all the way to the edge, set next white after the edge
+                    for (; col < areaRight && !IsOutOfBounds(row, col) && BlackWhiteImage[row, col]; col++) ;
+                    colPos[posPtr++] = col;
+                    if (col == areaRight) break;
+
+                    // look for next black
+                    for (; col < areaRight && !IsOutOfBounds(row, col) && !BlackWhiteImage[row, col]; col++) ;
+                    if (col == areaRight) break;
+                    colPos[posPtr++] = col;
+                }
+
+                // we must have at least 6 positions
+                if (posPtr < 6) continue;
+
+                // build length array
+                int posLen = posPtr - 1;
+                int[] len = new int[posLen];
+                for (int ptr = 0; ptr < posLen; ptr++)
+                    len[ptr] = colPos[ptr + 1] - colPos[ptr];
+
+                // test signature
+                int sigLen = posPtr - 5;
+                for (int sigPtr = 0; sigPtr < sigLen; sigPtr += 2)
+                {
+                    if (TestAlignSig(colPos, len, sigPtr, out double moduleSize))
+                        AlignList.Add(new QRCodeFinder(row, colPos[sigPtr + 2], colPos[sigPtr + 3], moduleSize));
+                }
+            }
+
+            // exit
+            return AlignList.Count != 0;
+        }
+
+        /// <summary>
+        /// search column by column for alignment blocks
         /// </summary>
         /// <param name="areaLeft"></param>
         /// <param name="areaTop"></param>
@@ -671,8 +533,9 @@ namespace QRFocus.Library
                 if (!ActiveColumn[Col - areaLeft]) continue;
 
                 // look for first black pixel
-                int Row;
-                for (Row = areaTop; Row < AreaBottom && !BlackWhiteImage[Row, Col]; Row++) ;
+                int Row = areaTop;
+
+                for (Row = areaTop; Row < AreaBottom && !IsOutOfBounds(Row, Col) && !BlackWhiteImage[Row, Col]; Row++) ;
                 if (Row == AreaBottom) continue;
 
                 // first black
@@ -684,12 +547,12 @@ namespace QRFocus.Library
                 {
                     // look for next white
                     // if black is all the way to the edge, set next white after the edge
-                    for (; Row < AreaBottom && BlackWhiteImage[Row, Col]; Row++) ;
+                    for (; Row < AreaBottom && !IsOutOfBounds(Row, Col) && BlackWhiteImage[Row, Col]; Row++) ;
                     RowPos[PosPtr++] = Row;
                     if (Row == AreaBottom) break;
 
                     // look for next black
-                    for (; Row < AreaBottom && !BlackWhiteImage[Row, Col]; Row++) ;
+                    for (; Row < AreaBottom && !IsOutOfBounds(Row, Col) && !BlackWhiteImage[Row, Col]; Row++) ;
                     if (Row == AreaBottom) break;
                     RowPos[PosPtr++] = Row;
                 }
@@ -719,7 +582,7 @@ namespace QRFocus.Library
         }
 
         /// <summary>
-        /// search column by column for finders blocks
+        /// search rows by columns for alignment blocks
         /// </summary>
         /// <returns></returns>
         internal bool RemoveUnusedFinders()
@@ -769,6 +632,40 @@ namespace QRFocus.Library
         }
 
         /// <summary>
+        /// search row by row for finders blocks
+        /// </summary>
+        /// <param name="Corner"></param>
+        /// <returns></returns>
+        internal bool FindAlignmentMark(QRCodeCorner Corner)
+        {
+            // alignment mark estimated position
+            int AlignRow = QRCodeDimension - 7;
+            int AlignCol = QRCodeDimension - 7;
+            int ImageCol = (int)Math.Round(Trans3a * AlignCol + Trans3c * AlignRow + Trans3e, 0, MidpointRounding.AwayFromZero);
+            int ImageRow = (int)Math.Round(Trans3b * AlignCol + Trans3d * AlignRow + Trans3f, 0, MidpointRounding.AwayFromZero);
+
+            // search area
+            int Side = (int)Math.Round(QRFocusSettings.Instance.ALIGNMENT_SEARCH_AREA * (Corner.TopLineLength + Corner.LeftLineLength), 0, MidpointRounding.AwayFromZero);
+
+            int AreaLeft = ImageCol - Side / 2;
+            int AreaTop = ImageRow - Side / 2;
+            int AreaWidth = Side;
+            int AreaHeight = Side;
+
+            // horizontal search for finders
+            if (!HorizontalAlignmentSearch(AreaLeft, AreaTop, AreaWidth, AreaHeight)) return false;
+
+            // vertical search for finders
+            VerticalAlignmentSearch(AreaLeft, AreaTop, AreaWidth, AreaHeight);
+
+            // remove unused alignment entries
+            if (!RemoveUnusedAlignMarks()) return false;
+
+            // successful exit
+            return true;
+        }
+
+        /// <summary>
         /// search column by column for finders blocks
         /// </summary>
         /// <returns></returns>
@@ -814,7 +711,7 @@ namespace QRFocus.Library
         /// <param name="Index"></param>
         /// <param name="Module"></param>
         /// <returns></returns>
-        internal static bool TestFinderSig(
+        internal bool TestFinderSig(
             int[] Pos,
             int[] Len,
             int Index,
@@ -838,7 +735,7 @@ namespace QRFocus.Library
         /// <param name="Index"></param>
         /// <param name="Module"></param>
         /// <returns></returns>
-        internal static bool TestAlignSig(
+        internal bool TestAlignSig(
             int[] Pos,
             int[] Len,
             int Index,
@@ -853,7 +750,9 @@ namespace QRFocus.Library
             if (Len[Index + 4] < Module - MaxDev) return false;
             return true;
         }
+        #endregion
 
+        #region Buscador de orientación de QR
         /// <summary>
         /// Get QR Code corner info
         /// </summary>
@@ -913,7 +812,7 @@ namespace QRFocus.Library
                 return true;
             }
 
-            catch
+            catch (Exception ex)
             {
                 // failed exit
                 return false;
@@ -969,13 +868,49 @@ namespace QRFocus.Library
                 return true;
             }
 
-            catch
+            catch (Exception ex)
             {
                 // failed exit
                 return false;
             }
         }
 
+        internal static void SolveMatrixOne(double[,] Matrix)
+        {
+            for (int Row = 0; Row < 3; Row++)
+            {
+                // If the element is zero, make it non zero by adding another row
+                if (Matrix[Row, Row] == 0)
+                {
+                    int Row1;
+                    for (Row1 = Row + 1; Row1 < 3 && Matrix[Row1, Row] == 0; Row1++) ;
+                    if (Row1 == 3) throw new ApplicationException("Solve linear equations failed");
+
+                    for (int Col = Row; Col < 4; Col++) Matrix[Row, Col] += Matrix[Row1, Col];
+                }
+
+                // make the diagonal element 1.0
+                for (int Col = 3; Col > Row; Col--) Matrix[Row, Col] /= Matrix[Row, Row];
+
+                // subtract current row from next rows to eliminate one value
+                for (int Row1 = Row + 1; Row1 < 3; Row1++)
+                {
+                    for (int Col = 3; Col > Row; Col--)
+                        Matrix[Row1, Col] -= Matrix[Row, Col] * Matrix[Row1, Row];
+                }
+            }
+
+            // go up from last row and eliminate all solved values
+            Matrix[1, 3] -= Matrix[1, 2] * Matrix[2, 3];
+            Matrix[0, 3] -= Matrix[0, 2] * Matrix[2, 3];
+            Matrix[0, 3] -= Matrix[0, 1] * Matrix[1, 3];
+            return;
+        }
+
+        /// <summary>
+        /// Búsqueda de objeto en base a 3 puntos cardinales
+        /// </summary>
+        /// <param name="Corner"></param>
         internal void SetTransMatrix(QRCodeCorner Corner)
         {
             // save
@@ -1033,97 +968,15 @@ namespace QRFocus.Library
             Trans4Mode = false;
             return;
         }
-
-        internal static void SolveMatrixOne(double[,] Matrix)
-        {
-            for (int Row = 0; Row < 3; Row++)
-            {
-                // If the element is zero, make it non zero by adding another row
-                if (Matrix[Row, Row] == 0)
-                {
-                    int Row1;
-                    for (Row1 = Row + 1; Row1 < 3 && Matrix[Row1, Row] == 0; Row1++) ;
-                    if (Row1 == 3) throw new ApplicationException("Solve linear equations failed");
-
-                    for (int Col = Row; Col < 4; Col++) Matrix[Row, Col] += Matrix[Row1, Col];
-                }
-
-                // make the diagonal element 1.0
-                for (int Col = 3; Col > Row; Col--) Matrix[Row, Col] /= Matrix[Row, Row];
-
-                // subtract current row from next rows to eliminate one value
-                for (int Row1 = Row + 1; Row1 < 3; Row1++)
-                {
-                    for (int Col = 3; Col > Row; Col--)
-                        Matrix[Row1, Col] -= Matrix[Row, Col] * Matrix[Row1, Row];
-                }
-            }
-
-            // go up from last row and eliminate all solved values
-            Matrix[1, 3] -= Matrix[1, 2] * Matrix[2, 3];
-            Matrix[0, 3] -= Matrix[0, 2] * Matrix[2, 3];
-            Matrix[0, 3] -= Matrix[0, 1] * Matrix[1, 3];
-            return;
-        }
+        #endregion
 
         /// <summary>
-        /// Get image pixel color
-        /// </summary>
-        /// <param name="Row"></param>
-        /// <param name="Col"></param>
-        /// <returns></returns>
-        internal bool GetModule(int Row, int Col)
-        {
-            // get module based on three finders
-            if (!Trans4Mode)
-            {
-                int Trans3Col = (int)Math.Round(Trans3a * Col + Trans3c * Row + Trans3e, 0, MidpointRounding.AwayFromZero);
-                int Trans3Row = (int)Math.Round(Trans3b * Col + Trans3d * Row + Trans3f, 0, MidpointRounding.AwayFromZero);
-                return BlackWhiteImage[Trans3Row, Trans3Col];
-            }
-
-            // get module based on three finders plus one alignment mark
-            double W = Trans4g * Col + Trans4h * Row + 1.0;
-            int Trans4Col = (int)Math.Round((Trans4a * Col + Trans4b * Row + Trans4c) / W, 0, MidpointRounding.AwayFromZero);
-            int Trans4Row = (int)Math.Round((Trans4d * Col + Trans4e * Row + Trans4f) / W, 0, MidpointRounding.AwayFromZero);
-            return BlackWhiteImage[Trans4Row, Trans4Col];
-        }
-
-        /// <summary>
-        /// search row by row for finders blocks
+        /// Búsqueda de objeto en base a 4 puntos cardinales
         /// </summary>
         /// <param name="Corner"></param>
-        /// <returns></returns>
-        internal bool FindAlignmentMark(QRCodeCorner Corner)
-        {
-            // alignment mark estimated position
-            int AlignRow = QRCodeDimension - 7;
-            int AlignCol = QRCodeDimension - 7;
-            int ImageCol = (int)Math.Round(Trans3a * AlignCol + Trans3c * AlignRow + Trans3e, 0, MidpointRounding.AwayFromZero);
-            int ImageRow = (int)Math.Round(Trans3b * AlignCol + Trans3d * AlignRow + Trans3f, 0, MidpointRounding.AwayFromZero);
-
-
-            // search area
-            int Side = (int)Math.Round(QRFocusSettings.Instance.ALIGNMENT_SEARCH_AREA * (Corner.TopLineLength + Corner.LeftLineLength), 0, MidpointRounding.AwayFromZero);
-
-            int AreaLeft = ImageCol - Side / 2;
-            int AreaTop = ImageRow - Side / 2;
-            int AreaWidth = Side;
-            int AreaHeight = Side;
-
-            // horizontal search for finders
-            if (!HorizontalAlignmentSearch(AreaLeft, AreaTop, AreaWidth, AreaHeight)) return false;
-
-            // vertical search for finders
-            VerticalAlignmentSearch(AreaLeft, AreaTop, AreaWidth, AreaHeight);
-
-            // remove unused alignment entries
-            if (!RemoveUnusedAlignMarks()) return false;
-
-            // successful exit
-            return true;
-        }
-
+        /// <param name="ImageAlignRow"></param>
+        /// <param name="ImageAlignCol"></param>
+        /// <exception cref="ApplicationException"></exception>
         internal void SetTransMatrix(
             QRCodeCorner Corner,
             double ImageAlignRow,
@@ -1215,10 +1068,12 @@ namespace QRFocus.Library
 
             // go up from last row and eliminate all solved values
             for (int Col = 7; Col > 0; Col--)
+            {
                 for (int Row = Col - 1; Row >= 0; Row--)
                 {
                     Matrix[Row, 8] -= Matrix[Row, Col] * Matrix[Col, 8];
                 }
+            }
 
             Trans4a = Matrix[0, 8];
             Trans4b = Matrix[1, 8];
@@ -1232,6 +1087,35 @@ namespace QRFocus.Library
             // set trans 4 mode
             Trans4Mode = true;
             return;
+        }
+
+        /// <summary>
+        /// Get image pixel color
+        /// </summary>
+        /// <param name="Row"></param>
+        /// <param name="Col"></param>
+        /// <returns></returns>
+        internal bool GetModule(int Row, int Col)
+        {
+            // get module based on three finders
+            if (!Trans4Mode)
+            {
+                int Trans3Col = (int)Math.Round(Trans3a * Col + Trans3c * Row + Trans3e, 0, MidpointRounding.AwayFromZero);
+                int Trans3Row = (int)Math.Round(Trans3b * Col + Trans3d * Row + Trans3f, 0, MidpointRounding.AwayFromZero);
+
+                if (IsOutOfBounds(Trans3Row, Trans3Col)) return false;
+
+                return BlackWhiteImage[Trans3Row, Trans3Col];
+            }
+
+            // get module based on three finders plus one alignment mark
+            double W = Trans4g * Col + Trans4h * Row + 1.0;
+            int Trans4Col = (int)Math.Round((Trans4a * Col + Trans4b * Row + Trans4c) / W, 0, MidpointRounding.AwayFromZero);
+            int Trans4Row = (int)Math.Round((Trans4d * Col + Trans4e * Row + Trans4f) / W, 0, MidpointRounding.AwayFromZero);
+
+            if (IsOutOfBounds(Trans4Row, Trans4Col)) return false;
+
+            return BlackWhiteImage[Trans4Row, Trans4Col];
         }
 
         /// <summary>
@@ -1490,7 +1374,6 @@ namespace QRFocus.Library
             return;
         }
 
-
         /// <summary>
         /// Restore interleave data and error correction blocks
         /// </summary>
@@ -1557,7 +1440,6 @@ namespace QRFocus.Library
             CodewordsArray = TempArray;
             return;
         }
-
 
         /// <summary>
         /// Calculate Error Correction
@@ -1635,7 +1517,6 @@ namespace QRFocus.Library
 
             return true;
         }
-
 
         /// <summary>
         /// Convert bit array to byte array
@@ -1777,7 +1658,6 @@ namespace QRFocus.Library
             // save data
             return DataSeg.ToArray();
         }
-
 
         /// <summary>
         /// Read data from codeword array
